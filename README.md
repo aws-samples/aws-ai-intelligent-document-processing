@@ -1,17 +1,76 @@
-## My Project
+# Intelligent Document Processing with AWS AI Services
 
-TODO: Fill this README out!
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aws-samples/amazon-eks-arch-apache-solr/blob/main/LICENSE)
 
-Be sure to:
+Documents contain valuable information and come in various shapes and forms. In most cases, you are manually processing these documents which is time consuming, prone to error, and costly. Not only do you want this information extracted quickly but can also automate business processes that presently relies on manual inputs and intervention across various file types and formats.
 
-* Change the title in this README
-* Edit your repository description on GitHub
+To help you overcome these challenges, AWS Machine Learning (ML) now provides you choices when it comes to extracting information from complex content in any document format such as insurance claims, mortgages, healthcare claims, contracts, and legal contracts. 
 
-## Security
+## Different phases of Intelligent Document Processing pipeline
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+<p align="center">
+  <img src="./images/idp-phases.png" alt="cfn1"/>
+</p>
+
+In this workshop, we will deep-dive into each of these phases of the IDP Pipeline with solutions to automate each step.
+We have hands-on labs to familiarize yourself with AWS AI services ( Amazon Textract, Amazon Comprehend) to build your solution
+
+## Getting Started
+
+In order to be able to execute all the Jupyter Notebooks in this sample, we will first need to create a SageMaker Studio domain. The CloudFormation template to create the SageMaker Studio domain and all the related resources, such as IAM Roles, S3 Bucket etc. is included under the `/dist` directory. Follow the steps below to create the CloudFormation stack using the `idp-deploy.yaml` file.
+
+> :warning: Your AWS account **must have a default VPC** for this CloudFormation template to work.
+> Your AWS account may incur some nominal charges for SageMaker Studio domain, Amazon Textract, and Amazon Comprehend. However, Amazon Textract, Comprehend, and SageMaker are free to try as part of [AWS Free Tier](https://aws.amazon.com/free/).
+
+* Navigate to AWS Console
+* Search for CloudFormation in the "Services" search bar
+* Once in the CloudFormation console, click on the "Create Stack" button (use the "With new resources option")
+* In the "Create Stack" wizard, chose "Template is ready", then select "Upload a template file"
+<p align="center">
+  <img src="./images/cfn1.png" alt="cfn1"/>
+</p>
+
+* Upload the [provided](./dist/idp-deploy.yaml) `yaml` file, click "Next"
+* In the "Specify stack details" screen, enter "Stack name". Click "Next"
+<p align="center">
+  <img src="./images/cfn2.png" alt="cfn2"/>
+</p>
+
+* In the "Configure Stack options" screen, leave the configurations as-is. Click "Next"
+* In the "Review" screen, scroll down to the bottom of the page to the "Capabilities" section and acknowledge the notice that the stack is going to create required IAM Roles by checking the check box. Click "Create stack".
+<p align="center">
+  <img src="./images/cfn3.png" alt="cfn3"/>
+</p>
+
+The stack creation can take upto 30 minutes. Once your SageMaker domain is created, you can navigate to the SageMaker console and click on "Amazon SageMaker Studio" on the left pane of the screen. Choose the default user created "SageMakerUser" and Click on "Launch Studio". This will open the SageMaker Studio IDE in a new browser tab. NOTE: If this is your first time using SageMaker Studio then it may take some time for the IDE to fully launch. 
+<p align="center">
+  <img src="./images/cfn4.png" alt="cfn4"/>
+</p>
+
+## Setup SageMaker Studio
+
+Once the SageMaker Studio IDE has fully loaded in your browser, you can clone this repository into the SageMaker Domain instance and start working on the provided Jupyter Notebooks. To clone this repository-
+
+* On the SageMaker Studio IDE, click on "File menu > New > Terminal". This will open a terminal window within SageMaker Studio.
+<p align="center">
+  <img src="./images/sm1.png" alt="sm1"/>
+</p>
+
+* By default, the terminal launches at the root of the SageMaker Studio IDE workspace.
+* Next, clone this repository using 
+
+```  
+git clone <repo_url> idp_workshop
+```
+
+* Once the repository is cloned, a direcotry named `idp_workshop` will appear in the "File Browser" on the left panel of SageMaker Studio IDE
+* You can now access the Jupyter Notebooks inside the directory and start working on them.
+
+You're all set to begin the workshop!
 
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
+
+
 
