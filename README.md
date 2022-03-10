@@ -1,5 +1,6 @@
 # Intelligent Document Processing with AWS AI Services
 
+[![Latest Version](https://img.shields.io/github/tag/aws-samples/aws-ai-intelligent-document-processing)](https://github.com/aws-samples/aws-ai-intelligent-document-processing/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aws-samples/amazon-eks-arch-apache-solr/blob/main/LICENSE)
 
 Documents contain valuable information and come in various shapes and forms. In most cases, you are manually processing these documents which is time consuming, prone to error, and costly. Not only do you want this information extracted quickly but can also automate business processes that presently relies on manual inputs and intervention across various file types and formats.
