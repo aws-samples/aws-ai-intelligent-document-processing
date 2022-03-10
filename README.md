@@ -3,7 +3,9 @@
 [![Latest Version](https://img.shields.io/github/tag/aws-samples/aws-ai-intelligent-document-processing)](https://github.com/aws-samples/aws-ai-intelligent-document-processing/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aws-samples/amazon-eks-arch-apache-solr/blob/main/LICENSE)
 
-Documents contain valuable information and come in various shapes and forms. In most cases, you are manually processing these documents which is time consuming, prone to error, and costly. Not only do you want this information extracted quickly but can also automate business processes that presently relies on manual inputs and intervention across various file types and formats.
+This repository is part of [Intelligent Document Processing with AWS AI Services](https://catalog.us-east-1.prod.workshops.aws/workshops/c2af04b2-54ab-4b3d-be73-c7dd39074b20) workshop.
+
+Documents contain valuable information and come in various shapes and forms. In most cases, you are manually processing these documents which is time consuming, prone to error, and expensive. Not only do you want this information extracted quickly but you also want to automate business processes that presently rely on manual inputs and intervention across various file types and formats.
 
 To help you overcome these challenges, AWS Machine Learning (ML) now provides you choices when it comes to extracting information from complex content in any document format such as insurance claims, mortgages, healthcare claims, contracts, and legal contracts. 
 
