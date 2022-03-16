@@ -6,7 +6,7 @@ Parameters:
   DomainName:
     Type: String
     Description: The domain name of the Sagemaker studio instance
-    Default: 'MySagemakerDomain'
+    Default: 'IDPSagemakerDomain'
   
 Mappings: 
   RegionMap: 
@@ -146,68 +146,14 @@ Resources:
         - arn:aws:iam::aws:policy/IAMReadOnlyAccess
         - arn:aws:iam::aws:policy/AmazonAugmentedAIIntegratedAPIAccess
 
-  LambdaExecutionPolicy:
-    Type: AWS::IAM::ManagedPolicy    
-    Properties:      
-      Path: /
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Sid: CloudWatchLogsPermissions
-            Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-            Resource: !Sub "arn:${AWS::Partition}:logs:*:*:*"
-          - Sid: SageMakerDomainPermission
-            Effect: Allow
-            Action:
-              - sagemaker:ListDomains
-              - sagemaker:CreateDomain
-              - sagemaker:DescribeDomain
-              - sagemaker:DeleteDomain
-              - sagemaker:UpdateDomain
-              - sagemaker:ListUserProfiles
-              - sagemaker:CreateUserProfile
-              - sagemaker:UpdateUserProfile
-              - sagemaker:DeleteUserProfile
-              - sagemaker:DescribeUserProfile
-              - sagemaker:ListApps
-              - sagemaker:CreateApp
-              - sagemaker:DescribeApp
-              - sagemaker:DeleteApp
-              - sagemaker:UpdateApp
-            Resource:
-              - !Sub "arn:${AWS::Partition}:sagemaker:*:*:domain/*"
-              - !Sub "arn:${AWS::Partition}:sagemaker:*:*:user-profile/*"
-              - !Sub "arn:${AWS::Partition}:sagemaker:*:*:app/*"
-          - Sid: SageMakerProjectsPermission
-            Effect: Allow
-            Action:
-              - servicecatalog:AcceptPortfolioShare
-              - sagemaker:EnableSagemakerServicecatalogPortfolio
-              - sagemaker:DisableSagemakerServicecatalogPortfolio
-            Resource: '*'
-          - Sid: ServiceCatalogPermission
-            Effect: Allow
-            Action:
-              - servicecatalog:*
-            Resource: '*'
-          - Sid: SageMakerExecPassRole
-            Effect: Allow
-            Action:
-              - iam:PassRole
-            Resource: !GetAtt  SageMakerExecutionRole.Arn
-      Roles:
-        - !Ref  LambdaExecutionRole
+  
   # Adding a wait time after SageMakerExecutionRole creation
   DomainDeploymentDelay:
     Type: 'Custom::Delay'
     DependsOn: SageMakerExecutionRole
     Properties:
       ServiceToken: !GetAtt DelayLambda.Arn
-      TimeToWait: 300
+      TimeToWait: 180
 
   DelayLambda:
     Type: 'AWS::Lambda::Function'
@@ -228,64 +174,20 @@ Resources:
             print(f'Waiting finished')
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {},'')
 
-  DefaultVpcLambda:
-    Type: AWS::Lambda::Function
+  VPC:
+    Type: AWS::EC2::VPC
     Properties:
-      FunctionName: CFGetDefaultVpcId
-      Code:
-        ZipFile: |
-          import json
-          import boto3
-          import cfnresponse
-
-          ec2 = boto3.client('ec2')
-
-          def lambda_handler(event, context): 
-              try:            
-                  if 'RequestType' in event and event['RequestType'] == 'Create':
-                      vpc_id = get_default_vpc_id()
-                      subnets =  get_subnets_for_vpc(vpc_id)
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {'VpcId': vpc_id , "Subnets" : subnets}, '')
-                  else:
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {},'')
-              except Exception as e:
-                  print(e)
-                  cfnresponse.send(event, context, cfnresponse.FAILED, {},'')
-
-          def get_default_vpc_id():
-              try:
-                  vpcs = ec2.describe_vpcs(Filters=[{'Name': 'is-default', 'Values': ['true']}])
-                  vpcs = vpcs['Vpcs']
-                  if len(vpcs) == 0:
-                      print("Error: No default VPCs found")
-                  vpc_id = vpcs[0]['VpcId']
-                  return vpc_id
-              except Exception:
-                  raise
-
-          def get_subnets_for_vpc(vpcId):
-              response = ec2.describe_subnets(
-                  Filters=[
-                      {
-                          'Name': 'vpc-id',
-                          'Values': [vpcId]
-                      }
-                  ]
-              )
-              subnet_ids = []
-              for subnet in response['Subnets']:
-                  subnet_ids.append(subnet['SubnetId'])
-              return subnet_ids 
-      Description: Return default VPC ID and Subnets
-      Handler: index.lambda_handler
-      MemorySize: 512
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: python3.7
-      Timeout: 5
-  DefaultVpcFinder:
-    Type: Custom::ResourceForFindingDefaultVpc
+      CidrBlock: 10.0.0.0/16
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
     Properties:
-      ServiceToken: !GetAtt DefaultVpcLambda.Arn
+      CidrBlock: 10.0.0.0/20
+      VpcId: !Ref VPC
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.32.0/20
+      VpcId: !Ref VPC
 
   StudioDomain:
     Type: AWS::SageMaker::Domain
@@ -296,8 +198,8 @@ Resources:
       DefaultUserSettings: 
           ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
       DomainName: !Ref DomainName 
-      SubnetIds: !GetAtt DefaultVpcFinder.Subnets
-      VpcId: !GetAtt DefaultVpcFinder.VpcId
+      SubnetIds: [!Ref PrivateSubnet, !Ref PublicSubnet]
+      VpcId: !Ref VPC
 
   UserProfile:
     Type: AWS::SageMaker::UserProfile
