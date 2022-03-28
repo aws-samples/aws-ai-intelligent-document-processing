@@ -106,6 +106,7 @@ Resources:
                   - textract:GetDocumentTextDetection
                   - textract:GetDocumentAnalysis
                   - textract:AnalyzeDocument
+                  - textract:AnalyzeExpense
                   - textract:DetectDocumentText
                   - textract:StartDocumentAnalysis
                   - textract:StartDocumentTextDetection
