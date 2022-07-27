@@ -106,10 +106,18 @@ Resources:
                   - textract:GetDocumentTextDetection
                   - textract:GetDocumentAnalysis
                   - textract:AnalyzeDocument
+                  - textract:AnalyzeID
+                  - textract:AnalyzeExpense
                   - textract:DetectDocumentText
                   - textract:StartDocumentAnalysis
                   - textract:StartDocumentTextDetection
                   - comprehend:DetectEntities
+                  - comprehend:DetectPiiEntities
+                  - comprehend:ContainsPiiEntities
+                  - comprehend:DescribePiiEntitiesDetectionJob
+                  - comprehend:ListPiiEntitiesDetectionJobs
+                  - comprehend:StartPiiEntitiesDetectionJob
+                  - comprehend:StopPiiEntitiesDetectionJob
                   - comprehend:StartEntitiesDetectionJob
                   - comprehend:ClassifyDocument
                   - comprehend:DescribeDocumentClassificationJob

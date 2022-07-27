@@ -63,7 +63,7 @@ Once the SageMaker Studio IDE has fully loaded in your browser, you can clone th
 * Next, clone this repository using 
 
 ```  
-git clone <repo_url> idp_workshop
+git clone https://github.com/aws-samples/aws-ai-intelligent-document-processing idp_workshop
 ```
 
 * Once the repository is cloned, a direcotry named `idp_workshop` will appear in the "File Browser" on the left panel of SageMaker Studio IDE

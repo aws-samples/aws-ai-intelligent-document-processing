@@ -1,0 +1,159 @@
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<link rel="stylesheet" href="https://s3.amazonaws.com/smgtannotation/web/static/css/1.3fc3007b.chunk.css">
+<link rel="stylesheet" href="https://s3.amazonaws.com/smgtannotation/web/static/css/main.9504782e.chunk.css">
+<link href="/static/css/1.fe2e351b.chunk.css" rel="stylesheet">
+<link href="/static/css/main.2b80d815.chunk.css" rel="stylesheet">
+<style>
+  .wrapper {
+    position:relative;
+    display:block; /* <= shrinks container to image size */
+    overflow-y: scroll;
+    max-height:1000px;
+    background-color: #e9ecec;
+    padding: 30px;
+    border:red 10px;
+  }
+  .img-overlay-wrap {
+    position: relative;
+    display: inline-block; /* <= shrinks container to image size */
+    transition: transform 150ms ease-in-out;
+    overflow-y: scroll;
+    background-color: #e9ecec;
+   }
+  
+  .img-overlay-wrap img { /* <= optional, for responsiveness */
+     display: block;
+     max-width: 800;
+     height: auto;
+     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .img-overlay-wrap svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  .img-overlay-wrap svg rect {
+      stroke:#009879;
+      stroke-width: 2;
+      fill: #009879; 
+      fill-opacity: 20%;
+  }
+
+  .styled-table input {
+    width:250px;
+    height: 100px;
+    vertical-align: top;
+  }
+  .styled-table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    width:100%;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  }
+  .styled-table thead tr {
+      background-color: #009879;
+      color: #ffffff;
+      text-align: left;
+  }
+  .styled-table th,
+  .styled-table td {
+      padding: 12px 15px;
+      vertical-align: top;
+  }
+  .styled-table tbody tr {
+      border-bottom: 1px solid #dddddd;
+  }
+
+  .styled-table tbody tr:nth-of-type(even) {
+      background-color: #f3f3f3;
+  }
+
+  .styled-table tbody tr:last-of-type {
+      border-bottom: 2px solid #009879;
+  }
+  .styled-table tbody tr.active-row {
+      font-weight: bold;
+      color: #009879;
+  }  
+  </style>
+  <script>
+    function condition_over(idx) {
+      document.getElementById("rectm_" + idx).style = "stroke-width:2px; fill: transparent; stroke: #9e4064; fill: #c5a7be;";
+      document.getElementById("tr_" + idx).class = "active-row"
+    }
+    function condition_out(idx) {
+      document.getElementById("rectm_" + idx).style = "stroke-width: 2;fill: #009879; fill-opacity: 20%;";
+      document.getElementById("tr_" + idx).class = ""
+    }
+   </script>
+<div id='document-text' style="display: none;">
+  {{ task.input.text }}
+</div>
+<div id='document-image' style="display: none;">
+        {{ task.input.s3.url | grant_read_access }}
+</div>
+
+<table>
+  <tr>
+    <td style="vertical-align: top;">
+      <div class="wrapper">
+      <div class="img-overlay-wrap">
+        <img src="{{ task.input.s3.url | grant_read_access }}">
+        <svg viewBox="0 0 {{task.input.s3.image_width}} {{task.input.s3.image_height}}">
+          {% for b in task.input.Results.ConditionMissed %}
+            {% if b.block != null %}
+            <rect id="rectm_{{b.index}}" width="{{ b.block.Geometry.BoundingBox.Width | times: task.input.s3.image_width }}" height="{{ b.block.Geometry.BoundingBox.Height | times: task.input.s3.image_height }}" x="{{ b.block.Geometry.BoundingBox.Left | times: task.input.s3.image_width }}" y="{{ b.block.Geometry.BoundingBox.Top | times: task.input.s3.image_height }}"></rect>
+            {% endif %}
+          {% endfor %}
+        </svg>
+      </div>
+    </div>
+    </td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td style="vertical-align: top; padding: 20px;">
+      <crowd-form>
+        <div>
+          <h3>Instructions</h3>
+          <p>Please review the extracted result, and make corrections where appropriate. </p>
+      </div>
+      <br>
+      <h3> Missed Conditions </h3>
+      <table class="styled-table">
+        <thead>
+        <tr>
+          <th style="width:250px">DESCRIPTION</th>
+          <th>ACTUAL VALUE</th>
+          <th>YOUR VALUE</th>
+          <th>CHANGE REASON</th>
+        </tr>
+      </thead>
+        <tbody>
+          {% for r in task.input.Results.ConditionMissed %}
+      
+              <tr id="tr_{{r.index}}" onmouseover="javascript:condition_over( {{r.index}} )" onmouseout="javascript:condition_out({{r.index}})">
+                <td title="Field name: {{r.field_name}} ({{ r.condition_category }})">{{ r.message }}</td>
+                <td>{{ r.field_value }}</td>
+                <td>
+                  <p>
+                  <input type="text" name="True Value {{r.index}}" placeholder="Enter your value" />
+                  </p>
+                 </td>
+                 <td>
+                  <p>
+                  <input type="text" name="Change Reason {{r.index}}" placeholder="Explain why you changed the value" />
+                  </p>
+                 </td>
+              </tr>
+      
+            {% endfor %}
+          </tbody>
+        </table>
+        </crowd-form>
+    </td>
+  </tr>
+</table>
