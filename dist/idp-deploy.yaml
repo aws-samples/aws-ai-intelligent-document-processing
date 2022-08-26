@@ -261,6 +261,8 @@ Resources:
         ServerSideEncryptionConfiguration: 
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
   A2IBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -287,4 +289,6 @@ Resources:
         ServerSideEncryptionConfiguration: 
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
  
