@@ -142,6 +142,8 @@ Resources:
                   - comprehend:ListEntityRecognizerSummaries
                   - comprehend:ListDocumentClassifiers 
                   - comprehend:ListDocumentClassifierSummaries
+                  - comprehend:ImportModel
+                  - comprehendmedical:DetectEntitiesV2
                 Resource: '*'
       AssumeRolePolicyDocument: 
         Version: 2012-10-17
