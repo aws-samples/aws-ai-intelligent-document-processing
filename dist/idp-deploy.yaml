@@ -144,6 +144,14 @@ Resources:
                   - comprehend:ListDocumentClassifierSummaries
                   - comprehend:ImportModel
                   - comprehendmedical:DetectEntitiesV2
+                  - comprehendmedical:DetectPHI
+                  - comprehendmedical:InferICD10CM
+                  - comprehendmedical:InferRxNorm
+                  - comprehendmedical:InferSNOMEDCT
+                  - comprehendmedical:StartICD10CMInferenceJob
+                  - comprehendmedical:StartRxNormInferenceJob
+                  - comprehendmedical:StartSNOMEDCTInferenceJob
+                  - comprehendmedical:StartPHIDetectionJob
                 Resource: '*'
       AssumeRolePolicyDocument: 
         Version: 2012-10-17
