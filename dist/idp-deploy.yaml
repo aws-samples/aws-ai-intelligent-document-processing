@@ -115,8 +115,8 @@ Resources:
                   - textract:AnalyzeExpense
                   - textract:DetectDocumentText
                   - textract:StartDocumentAnalysis
-                  - textract:StartDocumentTextDetection       
-                  - textract:StartLendingAnalysis           
+                  - textract:StartDocumentTextDetection
+                  - textract:StartLendingAnalysis
                   - comprehend:DetectEntities
                   - comprehend:DetectPiiEntities
                   - comprehend:ContainsPiiEntities
