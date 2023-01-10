@@ -170,6 +170,7 @@ Resources:
                   - textract:StartDocumentAnalysis
                   - textract:StartDocumentTextDetection
                   - textract:StartLendingAnalysis
+                  - textract:GetLendingAnalysis
                   - comprehend:DetectEntities
                   - comprehend:DetectPiiEntities
                   - comprehend:ContainsPiiEntities
