@@ -1,10 +1,8 @@
 # Process Mortgage Documents with AWS AI Services
 
-<div align="center">
-    <p align="center">
-        <img src="./images/idp-mortgage-arch.png" alt="idp-mortgage"/>
-    </p>
-</div>
+Mortgage companies often need to process large volumes of diverse document types to extract business-critical data. Today, lenders are faced with the challenge of managing a manual, slow, and expensive process to extract data and insights from documents.
+
+To help address the issue, Amazon Textract Analyze Lending improves business process efficiency through automation and accuracy, reducing loan processing costs and providing the ability to scale quickly based on changing demand. Analyze Lending is feature of Amazon Textract's managed intelligent document processing API that fully automates the classification and extraction of information from loan packages. Customers simply upload their mortgage loan documents to the Analyze Lending API and its pre-trained machine learning models will automatically classify and split by document type, and extract critical fields of information from a mortgage loan packet.
 
 ## Get Started
 
