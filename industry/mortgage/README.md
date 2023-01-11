@@ -24,13 +24,11 @@ git clone https://github.com/aws-samples/aws-ai-intelligent-document-processing 
 cd idp_workshop/industry/mortgage
 ```
 
-4. Open the [01-document-classification.ipynb](./01-document-classification.ipynb) notebook and follow instructions in the notebook for Document Classification with Amazon Comprehend custom classifier.
+4. Open the [01-document-classification.ipynb](./01-document-classification.ipynb) notebook and follow instructions in the notebook for Document Classification with Amazon Textract Analyze Lending API.
 
-5. Open the [02-document-extraction-1.ipynb](./02-document-extraction-1.ipynb) notebook and follow instructions in the notebook for Document Extraction with Amazon Textract.
+5. Open the [02-document-extraction.ipynb](./02-document-extraction.ipynb) notebook and follow instructions in the notebook for Document Extraction with Amazon Textract Analyze Lending API.
    
-6. Open the [02-document-extraction-2.ipynb](./02-document-extraction-2.ipynb) notebook and follow instructions in the notebook for Document Extraction with Amazon Comprehend custom entity recognizer.
-
-7. Open the [02-document-enrichment.ipynb](./02-document-enrichment.ipynb) notebook and follow instructions in the notebook for Document enrichment (document redaction) with Amazon Comprehend PII entity recognizer.
+6. Open the [02-document-enrichment.ipynb](./02-document-enrichment.ipynb) notebook and follow instructions in the notebook for Document enrichment (document redaction) with Amazon Comprehend PII entity recognizer.
 
 ## Clean Up
 
