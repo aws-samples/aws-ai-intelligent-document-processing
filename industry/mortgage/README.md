@@ -4,6 +4,8 @@ Mortgage companies often need to process large volumes of diverse document types
 
 To help address the issue, Amazon Textract Analyze Lending improves business process efficiency through automation and accuracy, reducing loan processing costs and providing the ability to scale quickly based on changing demand. Analyze Lending is feature of Amazon Textract's managed intelligent document processing API that fully automates the classification and extraction of information from loan packages. Customers simply upload their mortgage loan documents to the Analyze Lending API and its pre-trained machine learning models will automatically classify and split by document type, and extract critical fields of information from a mortgage loan packet.
 
+![Architecture](./images/idp-mortgage-arch.png)
+
 ## Get Started
 
 1. Setup an [Amazon SageMaker Studio domain](https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio-onboard.html).
