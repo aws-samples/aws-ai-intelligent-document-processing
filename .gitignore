@@ -2,7 +2,7 @@
 .DS_Store
 **/.DS_Store
 
-classification_training.zip
+classification-training.zip
 classification-training/
 comprehend_train_data.csv
 ref_output.txt
