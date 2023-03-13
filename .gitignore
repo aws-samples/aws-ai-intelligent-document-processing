@@ -3,6 +3,6 @@
 **/.DS_Store
 
 classification_training.zip
-classification/
+classification-training/
 comprehend_train_data.csv
 ref_output.txt
