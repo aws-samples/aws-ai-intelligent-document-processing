@@ -1,3 +1,8 @@
 .ipynb_checkpoints
 .DS_Store
 **/.DS_Store
+
+classification_training.zip
+classification/
+comprehend_train_data.csv
+ref_output.txt
