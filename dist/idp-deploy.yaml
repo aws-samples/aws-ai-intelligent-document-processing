@@ -130,6 +130,25 @@ Resources:
     Properties:
       Description: 'IDP IAM role for Sagemaker'
       Policies:
+        - PolicyName: cognito-access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - cognito-idp:Describe*
+                  - cognito-idp:List*
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminDisableUser
+                  - cognito-idp:AdminEnableUser
+                  - cognito-idp:AdminRemoveUserFromGroup
+                  - cognito-idp:CreateGroup
+                  - cognito-idp:CreateUserPool*
+                  - cognito-idp:UpdateUserPool*
+                Resource: '*'
         - PolicyName: s3-access
           PolicyDocument:
             Version: 2012-10-17
