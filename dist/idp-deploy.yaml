@@ -130,7 +130,7 @@ Resources:
     Properties:
       Description: 'IDP IAM role for Sagemaker'
       Policies:
-      - PolicyName: cognito-access
+        - PolicyName: cognito-access
           PolicyDocument:
             Version: 2012-10-17
             Statement:
