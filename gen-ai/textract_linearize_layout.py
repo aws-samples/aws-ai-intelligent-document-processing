@@ -10,15 +10,17 @@ class LinearizeLayout:
                  exclude_page_footer: bool=False, 
                  exclude_page_number: bool=False,
                  skip_table: bool=False,
-                 save_txt_path: str=None):
+                 save_txt_path: str=None, 
+                 generate_markdown: bool=False):
         self.j = j
         self.table_format = table_format
         self.exclude_figure_text = exclude_figure_text
-        self.exclude_page_header=exclude_page_header
-        self.exclude_page_footer=exclude_page_footer
-        self.exclude_page_number=exclude_page_number
-        self.skip_table=skip_table
+        self.exclude_page_header = exclude_page_header
+        self.exclude_page_footer = exclude_page_footer
+        self.exclude_page_number = exclude_page_number
+        self.skip_table = skip_table
         self.save_txt_path = save_txt_path
+        self.generate_markdown = generate_markdown
         
     def _get_layout_blocks(self) -> tuple:
         """Get all blocks of type 'LAYOUT' and a dictionary of Ids mapped to their corresponding block."""
@@ -85,6 +87,7 @@ class LinearizeLayout:
 
                 if table_block and "Relationships" in table_block:
                     table_content = {}
+                    headers = {}
                     max_row = 0
                     max_col = 0
                     for cell_rel in table_block["Relationships"]:
@@ -99,13 +102,20 @@ class LinearizeLayout:
                                     max_col = max(max_col, col_idx)
                                     for r in range(cell_block.get('RowSpan', 1)):
                                         for c in range(cell_block.get('ColumnSpan', 1)):
-                                            table_content[(row_idx + r, col_idx + c)] = cell_text
-
-                    for r in range(1, max_row + 1):
+                                            if "EntityTypes" in cell_block and "COLUMN_HEADER" in cell_block["EntityTypes"]:
+                                                headers[col_idx + c] = cell_text
+                                            else:
+                                                table_content[(row_idx + r, col_idx + c)] = cell_text
+                    
+                    table_data = []
+                    start_row = 2 if headers else 1
+                    for r in range(start_row, max_row + 1):
                         row_data = []
                         for c in range(1, max_col + 1):
                             row_data.append(table_content.get((r, c), ""))
                         table_data.append(row_data)
+
+                    header_list = [headers.get(c, "") for c in range(1, max_col + 1)]
                 
                     try:
                         from tabulate import tabulate
@@ -113,8 +123,10 @@ class LinearizeLayout:
                         raise ModuleNotFoundError(
                             "Could not import tabulate python package. "
                             "Please install it with `pip install tabulate`."
-                        ) 
-                    texts.append(tabulate(table_data, tablefmt=self.table_format))
+                        )                         
+                    tab_fmt = "pipe" if self.generate_markdown else self.table_format
+                    '''If Markdown is enabled then default to pipe for tables'''
+                    texts.append(tabulate(table_data, headers=header_list, tablefmt=tab_fmt))
                     continue
                 else:
                     warnings.warn("LAYOUT_TABLE detected but TABLES feature was not provided in API call. \
@@ -125,8 +137,21 @@ class LinearizeLayout:
                     if any(self._is_inside(block['Geometry']['BoundingBox'], figure_geom) for figure_geom in figure_geometries):
                         continue
                 texts += block['Text'],
+            elif block["BlockType"] in ["LAYOUT_TITLE", "LAYOUT_SECTION_HEADER"] and "Relationships" in block:
+                # Get the associated LINE text for the layout
+                line_texts = [id2block[line_id]['Text'] for line_id in block["Relationships"][0]['Ids']]
+                combined_text = ' '.join(line_texts)
+
+                # Prefix with appropriate markdown
+                if self.generate_markdown:
+                    if block["BlockType"] == "LAYOUT_TITLE":
+                        combined_text = f"# {combined_text}"
+                    elif block["BlockType"] == "LAYOUT_SECTION_HEADER":
+                        combined_text = f"## {combined_text}"
+
+                texts += combined_text,
                 
-            if block["BlockType"].startswith('LAYOUT'):
+            if block["BlockType"].startswith('LAYOUT') and block["BlockType"] not in ["LAYOUT_TITLE", "LAYOUT_SECTION_HEADER"]:
                 if "Relationships" in block:
                     relationships = block["Relationships"]
                     children = [(x, depth + 1) for x in relationships[0]['Ids']]            
