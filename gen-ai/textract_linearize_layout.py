@@ -138,7 +138,7 @@ class LinearizeLayoutv2:
                 f.write(content)
                 
     def get_text(self) -> dict:
-        """Retrieve the text content in specified format. Default is CSV. Options: "csv", "markdown"."""
+        """Retrieve the text content per page. If TABLE feature is used then it will format the table appropriately."""
         # texts = []
         page_texts = {}
         layouts, id2block = self._get_layout_blocks()
