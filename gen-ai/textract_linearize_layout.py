@@ -1,7 +1,7 @@
 import os
 import warnings
 
-class LinearizeLayoutv2:
+class LinearizeLayout:
     def __init__(self, 
                  j: dict, 
                  table_format: str = "grid", 
