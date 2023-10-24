@@ -1,4 +1,5 @@
 import os
+import warnings
 
 class LinearizeLayoutv2:
     def __init__(self, 
@@ -106,16 +107,19 @@ class LinearizeLayoutv2:
                             row_data.append(table_content.get((r, c), ""))
                         table_data.append(row_data)
                 
-                try:
-                    from tabulate import tabulate
-                except ImportError:
-                    raise ModuleNotFoundError(
-                        "Could not import tabulate python package. "
-                        "Please install it with `pip install tabulate`."
-                    ) 
-                texts.append(tabulate(table_data, tablefmt=self.table_format))
-                continue
-            
+                    try:
+                        from tabulate import tabulate
+                    except ImportError:
+                        raise ModuleNotFoundError(
+                            "Could not import tabulate python package. "
+                            "Please install it with `pip install tabulate`."
+                        ) 
+                    texts.append(tabulate(table_data, tablefmt=self.table_format))
+                    continue
+                else:
+                    warnings.warn("LAYOUT_TABLE detected but TABLES feature was not provided in API call. \
+                                  Inlcuding TABLES feature may improve the layout output")
+                    
             if block["BlockType"] == "LINE" and "Text" in block:
                 if self.exclude_figure_text:
                     if any(self._is_inside(block['Geometry']['BoundingBox'], figure_geom) for figure_geom in figure_geometries):
@@ -138,7 +142,7 @@ class LinearizeLayoutv2:
                 f.write(content)
                 
     def get_text(self) -> dict:
-        """Retrieve the text content per page. If TABLE feature is used then it will format the table appropriately."""
+        """Retrieve the text content in specified format. Default is CSV. Options: "csv", "markdown"."""
         # texts = []
         page_texts = {}
         layouts, id2block = self._get_layout_blocks()
