@@ -24,7 +24,6 @@ The folllowing architecture explains the Amazon Q document ingestion workflow by
 
 Amazon Textract [*Layout*](https://aws.amazon.com/about-aws/whats-new/2023/09/amazon-textract-layout-feature-extract-paragraphs-titles-documents/) and [*Tables*](https://aws.amazon.com/blogs/machine-learning/announcing-enhanced-table-extractions-with-amazon-textract/) FeatureTypes enable customers to go beyond simple text extraction as these FeatureTypes can understand the context and visual cues of the information in scanned documents, which is crucial for maintaining the relevance of responses provided by Amazon Q.
 
-[Image: Amazon Q with Amazon Textract CDE.drawio.png]
 <p align="center">
   <img src="../images/cde-arch.png" alt="arch"/>
 </p>
@@ -57,7 +56,7 @@ After the lambda function is deployed in your AWS account, you can configure the
   <img src="../images/q-cde-add-data-source.png" alt="datasource"/>
 </p>
 
-- In the** Lambda function for pre-extraction **section, you need the ARNs of the `preExtraction` Lambda function. We use the same bucket that you’re using as the data source bucket.
+- In the **Lambda function for pre-extraction** section, you need the ARNs of the `preExtraction` Lambda function. We use the same bucket that you’re using as the data source bucket.
 - For IAM role, choose the CDE IAM role value we created in the prerequisite from the **Use the existing service role** dropdown and then Select **Next**.
 <p align="center">
   <img src="../images/q-cde-add-lambda.png" alt="lambda"/>
@@ -65,4 +64,4 @@ After the lambda function is deployed in your AWS account, you can configure the
 
 - Choose **Add document enrichment.**
 
-
+Voila! Now we’re ready to ingest scanned documents to our Amazon Q application! Once you sync your S3 data-source, your Amazon Q web experience is ready to be previewed, enhanced, and deployed.
