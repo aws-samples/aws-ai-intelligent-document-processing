@@ -1,7 +1,7 @@
 import json
 import boto3
 from botocore.exceptions import ClientError
-bedrock = boto3.client(service_name="bedrock-runtime", region_name="us-east-1")
+bedrock = boto3.client(service_name="bedrock-runtime")
 
 # Create a global function to call Bedrock. 
 def get_response_from_claude(prompt):
@@ -48,9 +48,7 @@ def get_response_from_claude(prompt):
         # return a tuple with 3 values
 		return text_response, input_tokens, output_tokens
 	except ClientError as err:
-		logger.error(
-			"Couldn't invoke Claude 3 Sonnet. Here's why: %s: %s",
-			err.response["Error"]["Code"],
-			err.response["Error"]["Message"],
+		print(
+			F"Couldn't invoke Claude 3 Sonnet. Here's why: {err.response['Error']['Code']}: {err.response['Error']['Message']}"
 		)
 		raise
