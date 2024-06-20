@@ -26,7 +26,8 @@ class DemoQueries(Stack):
             self,
             "TextractQueries",
             auto_delete_objects=True,
-            removal_policy=RemovalPolicy.DESTROY)
+            removal_policy=RemovalPolicy.DESTROY,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL)
         s3_output_bucket = document_bucket.bucket_name
         workflow_name = "Queries"
 
