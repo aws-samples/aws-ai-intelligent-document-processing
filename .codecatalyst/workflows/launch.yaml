@@ -36,8 +36,8 @@ Actions:
         - Run:
             aws s3api create-bucket --bucket $BUCKET_NAME  --region $REGION
             --create-bucket-configuration LocationConstraint=$REGION
-        - Run: aws s3 sync ./dist/idp-deploy.yaml
-            s3://$BUCKET_NAME/$GUIDANCE_NAME/$VERSION/
+        - Run: aws s3 cp ./dist/idp-deploy.yaml
+            s3://$BUCKET_NAME/$GUIDANCE_NAME/$VERSION/idp-deploy.yaml
       Container:
         Registry: CODECATALYST
         Image: CodeCatalystLinux_x86_64:2024_03
