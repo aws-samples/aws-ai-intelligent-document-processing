@@ -1,0 +1,57 @@
+Name: launch
+SchemaVersion: '1.0'
+Triggers:
+  - Type: PUSH
+    Branches:
+      - main
+Compute:
+  Type: EC2
+  Fleet: Linux.x86-64.Large
+Actions:
+  build:
+    Identifier: aws/build@v1
+    Inputs:
+      Sources:
+        - WorkflowSource
+      Variables:
+        - Name: region
+        - Name: bucketPrefix
+        - Name: guidanceVersion
+        - Name: DomainName
+        - Name: UserProfileName
+    Outputs:
+      AutoDiscoverReports:
+        Enabled: false
+        ReportNamePrefix: rpt
+    Configuration:
+      Steps:
+        - Run: export REGION=$region
+        - Run: export BUCKET_PREFIX=$bucketPrefix
+        - Run: export BUCKET_NAME=$BUCKET_PREFIX-$REGION
+        - Run: export GUIDANCE_NAME=guidance-for-intelligent-document-processing-on-aws
+        - Run: export VERSION=$guidanceVersion
+        - Run:
+            echo aws s3api create-bucket --bucket $BUCKET_NAME  --region $REGION
+            --create-bucket-configuration LocationConstraint=$REGION
+        - Run:
+            aws s3api create-bucket --bucket $BUCKET_NAME  --region $REGION
+            --create-bucket-configuration LocationConstraint=$REGION
+        - Run: aws s3 sync ./dist/idp-deploy.yaml
+            s3://$BUCKET_NAME/$GUIDANCE_NAME/$VERSION/
+      Container:
+        Registry: CODECATALYST
+        Image: CodeCatalystLinux_x86_64:2024_03
+    Environment:
+      Name: prod_environment
+  deploy:
+    DependsOn:
+      - build
+    Identifier: aws/cfn-deploy@v1
+    Configuration:
+      parameter-overrides: DomainName=$DomainName,UserProfileName=$UserProfileName
+      capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+      template: https://{{bucketPrefix}}-{{region}}.s3.{{region}}.amazonaws.com/guidance-for-intelligent-document-processing-on-aws/{{guidanceVersion}}/idp-deploy.yaml
+      region: {{ region }}
+      name: guidance-for-intelligent-document-processing-on-aws
+    Environment:
+      Name: prod_environment

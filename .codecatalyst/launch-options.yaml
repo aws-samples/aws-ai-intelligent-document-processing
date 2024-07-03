@@ -1,0 +1,46 @@
+options:
+  - key: region
+    value: us-west-2
+    displayName: AWS Region
+    description: The AWS Region to deploy the solution to.
+    displayType: region
+    possibleValues:
+      - eu-west-1
+      - us-west-2
+  - key: bucketPrefix
+    validationRegex: '(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
+    validationMessage: 'Bucket name should follow rules mentioned in https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html'
+    displayName: S3 Bucket Prefix
+    description: The S3 Bucket to use for staging resource deployments
+    displayType: string
+    optional: false
+  - key: DomainName
+    value: 'MySagemakerDomain'
+    displayName: SageMaker Domain Name
+    description: The domain name of the Sagemaker studio instance
+    displayType: string
+    optional: false
+  - key: UserProfileName
+    value: 'SageMakerUser'
+    displayName: SageMaker User Profile Name
+    description: The user profile name for the SageMaker workshop
+    displayType: string
+    optional: false
+  - key: Deployment
+    value:
+      name: prod_environment
+      environmentType: PRODUCTION
+    displayType: environment
+    displayName: Deployment Details
+    description: Select an AWS Account Connection to deploy this solution to.
+    environmentOptions:
+      accountConnections:
+        - name: awsAccountConnection
+          roles:
+            - name: launchRole
+              capabilities:
+                - '*'
+  - key: guidanceVersion
+    displayName: Guidance Version
+    description: Version of the Guidance
+    value: 'v2.0.0'
