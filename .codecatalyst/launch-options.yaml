@@ -8,7 +8,7 @@ options:
       - eu-west-1
       - us-west-2
   - key: bucketPrefix
-    validationRegex: '(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
+    validationRegex: '^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
     validationMessage: 'Bucket name should follow rules mentioned in https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html'
     displayName: S3 Bucket Prefix
     description: The S3 Bucket to use for staging resource deployments
