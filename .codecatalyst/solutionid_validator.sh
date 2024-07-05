@@ -4,9 +4,11 @@ set -e
 
 SOLUTIONID="SO9052"
 
-result=$(grep -nr --exclude-dir='.*' "${sdf}")
-if [[ $? -eq 0 ]] then
-  echo $result
+echo "grep -nr --exclude-dir='.codecatalyst' "${SOLUTIONID}" ./.."
+result=$(grep -nr --exclude-dir='.codecatalyst' "${SOLUTIONID}" ./..)
+if [ $? -eq 0 ] 
+then
+  echo "$result"
 else
   echo 'Solution ID "${SOLUTIONID}" not found'
 fi
