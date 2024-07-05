@@ -35,7 +35,7 @@ Actions:
         - Run: export BUCKET_NAME=$BUCKET_PREFIX-$REGION
         - Run: export GUIDANCE_NAME=guidance-for-intelligent-document-processing-on-aws
         - Run: export VERSION=$guidanceVersion
-        - Run: ./solutionid_validator.sh
+        - Run: ./.codecatalyst/solutionid_validator.sh
       Container:
         Registry: CODECATALYST
         Image: CodeCatalystLinux_x86_64:2024_03
