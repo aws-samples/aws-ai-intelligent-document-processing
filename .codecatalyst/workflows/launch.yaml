@@ -4,6 +4,10 @@ Triggers:
   - Type: PUSH
     Branches:
       - main
+  - Type: SCHEDULE
+    Expression: "0 2 * * ? *"
+    Branches:
+      - main
 Compute:
   Type: EC2
   Fleet: Linux.x86-64.Large
