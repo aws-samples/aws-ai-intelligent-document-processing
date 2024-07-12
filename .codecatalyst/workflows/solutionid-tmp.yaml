@@ -1,4 +1,4 @@
-Name: solutionid-tmp
+Name: solutionid-delete-me
 SchemaVersion: '1.0'
 Triggers:
   - Type: PUSH
