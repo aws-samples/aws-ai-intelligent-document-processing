@@ -1,6 +1,6 @@
 # Intelligent Document Processing with AWS AI Services
 
-[![Launch](https://img.shields.io/badge/Launch%20with%20CodeCatalyst-%F0%9F%9A%80-8A2BE2)](https://codecatalyst.aws/launch?options=%7B%22sourceRepository%22%3A%22https%3A%2F%2Fgithub.com%2Fvprince1%2Faws-ai-intelligent-document-processing%22%2C%22options%22%3A%5B%5B%22region%22%2C%22us-west-2%22%5D%5D%7D)
+[![Launch](https://img.shields.io/badge/Launch%20with%20CodeCatalyst-%F0%9F%9A%80-8A2BE2)](https://codecatalyst.aws/launch?options=%7B%22sourceRepository%22%3A%22https%3A%2F%2Fgithub.com%2Fvprince1%2Faws-ai-intelligent-document-processing%22%2C%22destinationRepositoryName%22%3A%22aws-ai-intelligent-document-processing%22%2C%22options%22%3A%5B%5B%22region%22%2C%22us-west-2%22%5D%5D%7D)
 [![Latest Version](https://img.shields.io/github/tag/aws-samples/aws-ai-intelligent-document-processing)](https://github.com/aws-samples/aws-ai-intelligent-document-processing/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aws-samples/amazon-eks-arch-apache-solr/blob/main/LICENSE)
 
