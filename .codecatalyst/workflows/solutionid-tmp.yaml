@@ -1,4 +1,4 @@
-Name: solutionid
+Name: solutionid-tmp
 SchemaVersion: '1.0'
 Triggers:
   - Type: PUSH
