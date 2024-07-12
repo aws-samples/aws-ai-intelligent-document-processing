@@ -2,7 +2,7 @@
 
 set -e
 
-SOLUTIONID="SO9052XX"
+SOLUTIONID="SO9052"
 
 echo "grep -nr --exclude-dir='.codecatalyst' "${SOLUTIONID}" ./.."
 result=$(grep -nr --exclude-dir='.codecatalyst' "${SOLUTIONID}" ./..)
