@@ -17,6 +17,12 @@ Actions:
     Inputs:
       Sources:
         - WorkflowSource
+      Variables:
+        - Name: region
+        - Name: bucketPrefix
+        - Name: guidanceVersion
+        - Name: DomainName
+        - Name: UserProfileName
     Outputs:
       AutoDiscoverReports:
         Enabled: false
