@@ -1,6 +1,6 @@
 #!/bin/sh
 
-USER_NAME="Vijay Prince"
+USER_NAME="Vijay Prince0"
 EMAIL="vjprince@amazon.com"
 
 git config --list
