@@ -3,11 +3,11 @@ SchemaVersion: '1.0'
 Triggers:
   - Type: PUSH
     Branches:
-      - test-solutionid
+      - main
   - Type: SCHEDULE
     Expression: "0 2 * * ? *"
     Branches:
-      - test-solutionid
+      - main
 Compute:
   Type: EC2
   Fleet: Linux.x86-64.Large
