@@ -34,11 +34,12 @@ Actions:
         - Run: export BUCKET_NAME=$BUCKET_PREFIX-$REGION
         - Run: export GUIDANCE_NAME=guidance-for-intelligent-document-processing-on-aws
         - Run: export VERSION=$guidanceVersion
-        - Run: git config --list
-        - Run: git remote add upstream https://github.com/vprince1/aws-ai-intelligent-document-processing.git
-        - Run: git fetch upstream
-        - Run: git -c "user.name=Vijay Prince" -c "user.email=vjprince@amazon.com" merge upstream/main --allow-unrelated-histories
-        - Run: git push
+        #- Run: git config --list
+        #- Run: git remote add upstream https://github.com/vprince1/aws-ai-intelligent-document-processing.git
+        #- Run: git fetch upstream
+        #- Run: git -c "user.name=Vijay Prince" -c "user.email=vjprince@amazon.com" merge upstream/main --allow-unrelated-histories
+        #- Run: git push
+        - Run: ./.codecatalyst/git-merge.sh
         - Run: echo ./.codecatalyst/create-bucket.sh $BUCKET_NAME $REGION
         - Run: ./.codecatalyst/create-bucket.sh $BUCKET_NAME $REGION
         - Run: aws s3 cp ./dist/idp-deploy.yaml
