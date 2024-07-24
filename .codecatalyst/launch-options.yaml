@@ -1,5 +1,4 @@
 options:
-sdfs
   - key: region
     value: us-west-2
     displayName: AWS Region
