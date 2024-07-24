@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: |
-  (SO9052) - AWS CloudFormation template for dynamic AWS Cloud9 setup required for the Intelligent Document Processing Workshop.
+  (SO905#2) - AWS CloudFormation template for dynamic AWS Cloud9 setup required for the Intelligent Document Processing Workshop.
 Parameters:
   WorkshopInstanceType:
     Description: Workshop Cloud9 instance type - Constrained AZs in a region could cause deployment failure for certain instance types
