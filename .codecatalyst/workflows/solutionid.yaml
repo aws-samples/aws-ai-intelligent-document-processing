@@ -8,6 +8,12 @@ Triggers:
     Expression: "0 2 * * ? *"
     Branches:
       - main
+  - Type: PULLREQUEST
+    Branches:
+      - main
+    Events:
+      - OPEN
+      - REVISION
 Compute:
   Type: EC2
   Fleet: Linux.x86-64.Large
