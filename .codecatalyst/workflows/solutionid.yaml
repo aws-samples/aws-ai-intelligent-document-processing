@@ -1,13 +1,6 @@
 Name: solutionid
 SchemaVersion: '1.0'
 Triggers:
-  #- Type: PUSH
-  #  Branches:
-  #    - main
-  - Type: SCHEDULE
-    Expression: "0 2 * * ? *"
-    Branches:
-      - main
   - Type: PULLREQUEST
     Branches:
       - main
