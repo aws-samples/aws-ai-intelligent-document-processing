@@ -1,0 +1,290 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for deploying a IDP GenAI Solution using Step Functions
+
+Globals:
+  Function:
+    Architectures:
+      - x86_64
+    Runtime: python3.12
+    Timeout: 600
+    MemorySize: 10240
+    Layers:
+      - !GetAtt PythonLayer.LayerVersionArn
+
+Parameters:
+  LayerName:
+    Type: String
+    Default: 'RhubarbLambdaLayer'
+    Description: 'Lambda Layer with Rhubarb Python Library'
+  PythonPackages:
+    Type: String
+    Default: 'pyrhubarb==0.0.3'
+    Description: 'Python packages to install (comma-separated)'
+
+
+Resources:
+  DocumentProcessingStateMachine:
+      Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+      Properties:
+        Name: !Sub ${AWS::StackName}-DocumentProcessingStateMachine
+        DefinitionUri: statemachine/document-processing-workflow.asl.json
+        DefinitionSubstitutions:
+          ExtractClassifySummaryFunctionArn: !GetAtt ExtractClassifySummaryFunction.Arn
+          ComplianceFunctionArn: !GetAtt ComplianceFunction.Arn
+          TableExtractionFunctionArn: !GetAtt TableExtractionFunction.Arn
+        Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ExtractClassifySummaryFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ComplianceFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TableExtractionFunction
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+
+  MainBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'main-bucket-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  MainBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MainBucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Sub arn:aws:s3:::${MainBucket}
+              - !Sub arn:aws:s3:::${MainBucket}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  S3TriggerStepFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-S3TriggerStepFunction
+      Handler: S3TriggerStepFunction.lambda_handler
+      CodeUri: functions/S3TriggerStepFunction/
+      Description: 'Trigger on S3 file upload to invoke step function workflow'
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        -  arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+      Environment:
+        Variables:
+          STEP_FUNCTION_ARN: !Ref DocumentProcessingStateMachine
+      Events:
+        MainBucket:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: MainBucket
+            Events:
+              - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: original/
+
+  ExtractClassifySummaryFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ExtractClassifySummariseFunction
+      Handler: ExtractClassifySummariseFunction.lambda_handler
+      CodeUri: functions/ExtractClassifySummariseFunction/
+      Description: 'Extract source file and classify'
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+        
+  ComplianceFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-CreateComplianceFunction
+      Handler: CreateComplianceFunction.lambda_handler
+      CodeUri: functions/CreateComplianceFunction/
+      Description: 'Generate compliance report of file to identify if it meets all rules'
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+      Environment:
+        Variables:
+          KB_ID: "INSERT KNOWLEDGE ID HERE"
+  
+  TableExtractionFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-TableExtractionFunction
+      Handler: TableExtractionFunction.lambda_handler
+      CodeUri: functions/TableExtractionFunction/
+      Description: 'Extract insights from file and parse into specified schema'
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+
+
+  LayerBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub 'rhubarb-layer-bucket-sam-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  LayerBuilderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-layer-builder'
+      Handler: index.handler
+      Role: !GetAtt LayerBuilderRole.Arn
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 512
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import boto3
+          import os
+          import subprocess
+          import shutil
+
+          def handler(event, context):
+              s3_client = boto3.client('s3')
+              lambda_client = boto3.client('lambda')
+              
+              try:
+                  layer_name = event['ResourceProperties']['LayerName']
+                  bucket_name = event['ResourceProperties']['BucketName']
+
+                  if event['RequestType'] in ['Create', 'Update']:
+                      packages = event['ResourceProperties']['Packages']
+                      
+                      if os.path.exists('/tmp/layer_content/python'):
+                          shutil.rmtree('/tmp/layer_content/python')
+                      os.makedirs('/tmp/layer_content/python', exist_ok=True)
+                      
+                      # Install packages
+                      subprocess.check_call(['/var/lang/bin/pip', 'install', '-t', '/tmp/layer_content/python'] + packages.split(','))
+                      
+                      # Create a ZIP file
+                      zip_file_path = f'/tmp/{layer_name}.zip'
+                      shutil.make_archive('/tmp/layer', 'zip', '/tmp/layer_content')
+                      os.rename('/tmp/layer.zip', zip_file_path)
+                      
+                      # Upload ZIP to S3
+                      s3_key = f'{layer_name}.zip'
+                      s3_client.upload_file(zip_file_path, bucket_name, s3_key)
+                      
+                      # Create the Lambda Layer
+                      response = lambda_client.publish_layer_version(
+                          LayerName=layer_name,
+                          Description=f'Layer with packages: {packages}',
+                          Content={
+                              'S3Bucket': bucket_name,
+                              'S3Key': s3_key
+                          },
+                          CompatibleRuntimes=['python3.11', 'python3.12'],
+                          CompatibleArchitectures=['x86_64']
+                      )
+                      
+                      layer_version_arn = response['LayerVersionArn']
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {'LayerVersionArn': layer_version_arn})
+                  elif event['RequestType'] == 'Delete':
+                      # Delete all versions of the Layer
+                      try:
+                          versions = lambda_client.list_layer_versions(LayerName=layer_name)['LayerVersions']
+                          for version in versions:
+                              lambda_client.delete_layer_version(
+                                  LayerName=layer_name,
+                                  VersionNumber=version['Version']
+                              )
+                          print(f"Successfully deleted all versions of Layer: {layer_name}")
+                      except lambda_client.exceptions.ResourceNotFoundException:
+                          print(f"Layer {layer_name} not found, it may have been already deleted")
+                      
+                      # Delete the ZIP file from S3
+                      s3_key = f'{layer_name}.zip'
+                      s3_client.delete_object(Bucket=bucket_name, Key=s3_key)
+                      
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  LayerBuilderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LayerManagementPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:PublishLayerVersion
+                  - lambda:DeleteLayerVersion
+                  - lambda:ListLayerVersions
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub '${LayerBucket.Arn}/*'
+
+  PythonLayer:
+    Type: Custom::LambdaLayer
+    Properties:
+      ServiceToken: !GetAtt LayerBuilderFunction.Arn
+      Packages: !Ref PythonPackages
+      LayerName: !Ref LayerName
+      BucketName: !Ref LayerBucket
+
+Outputs:
+  LayerVersionArn:
+    Description: 'ARN of the created Lambda Layer'
+    Value: !GetAtt PythonLayer.LayerVersionArn
+    Export:
+      Name: !Sub '${AWS::StackName}-LayerVersionArn'
+  LayerBucketName:
+    Description: 'Name of the S3 bucket used for Layer storage'
+    Value: !Ref LayerBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-LayerBucketName'
