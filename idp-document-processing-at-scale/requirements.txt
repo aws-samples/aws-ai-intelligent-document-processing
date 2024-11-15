@@ -1,5 +1,0 @@
-aws-cdk-lib==2.111.0
-constructs>=10.0.0,<11.0.0
-boto3
-amazon-textract-idp-cdk-constructs>=0.0.41
-schadem-tidp-manifest==0.0.8

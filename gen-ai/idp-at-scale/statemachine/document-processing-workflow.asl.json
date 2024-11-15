@@ -1,0 +1,77 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Extract and Classify and Summarise Document",
+  "States": {
+    "Extract and Classify and Summarise Document": {
+      "Type": "Task",
+      "Resource": "${ExtractClassifySummaryFunctionArn}",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Generate Compliance Report"
+    },
+    "Generate Compliance Report": {
+      "Type": "Task",
+      "Resource": "${ComplianceFunctionArn}",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice"
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Result",
+          "StringMatches": "Success, matches more than 50% of the rules",
+          "Next": "TableExtraction"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "TableExtraction": {
+      "Type": "Task",
+      "Resource": "${TableExtractionFunctionArn}",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Success"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail"
+    }
+  }
+}
