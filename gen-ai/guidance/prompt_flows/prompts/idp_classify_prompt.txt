@@ -1,0 +1,20 @@
+You are an expert at grouping and classifying documents
+Given the document
+<document>
+>{{doc_text}}
+<document>
+First, review the document page-by-page and group sequential pages from the same document together
+Next, for each grouping, identify a class from the list of classes below
+<classes>
+{{classes}}
+</classes>
+Return a json array with the following format
+[
+{"class": "class_name_1", "page-indexes": [0]},
+{"class": "class_name_2", "page-indexes": [1,2]},
+{"class": "class_name_3", "page-indexes": [3]}
+]
+use one of the flow_names listed above for flow_name.
+pay close attention to the <page-index> for each page. Use the value of the page-index to indicate the page numbers that belong to that class.
+think step by step in <thinking>
+return the json array in <json> tags

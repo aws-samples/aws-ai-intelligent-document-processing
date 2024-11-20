@@ -1,0 +1,12 @@
+Analyze the provided Mortgage Application Form (URLA-1003):
+<URLA-1003>
+{{doc_text}}
+</URLA-1003>
+
+Provide a comprehensive narrative report including:
+a) Summary of the applicant's financial situation
+b) Assessment of the applicant's ability to repay the loan
+c) Potential red flags or areas requiring further investigation
+d) Evaluation of the application's strength (credit profile, income stability, assets)
+e) Recommendations for additional documentation needed
+f) Any unusual aspects of the application that stand out

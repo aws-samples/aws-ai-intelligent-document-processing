@@ -1,0 +1,33 @@
+Analyze the provided text:
+<text>
+{{doc_text}}
+</text>
+Provide a structured JSON object containing the following information:
+
+{
+  "document_type": "",
+  "expiration_date": "",
+  "license_number": "",
+  "last_name": "",
+  "first_name": "",
+  "address": {
+    "street": "",
+    "city": "",
+    "state": "",
+    "zip_code": ""
+  },
+  "date_of_birth": "",
+  "ssn_status": "",
+  "donor_status": "",
+  "license_class": "",
+  "restrictions": "",
+  "sex": "",
+  "hair_color": "",
+  "eye_color": "",
+  "height": "",
+  "weight": "",
+  "issue_date": "",
+  "additional_info": ""
+}
+
+return only the JSON object with no other text

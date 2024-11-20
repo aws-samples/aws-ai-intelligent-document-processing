@@ -1,0 +1,11 @@
+You are an analyst processing mortgage documents. 
+Review the following document
+<document>
+{{doc_text}}
+</document>
+
+first, identify what type of document this is based on the content and suggest a class name in ALL_CAPS
+
+next, create a JSON template that maps to the key data in this document. 
+The JSON template should be generic in nature for any document of this class. 
+The JSON template should not contain any values from this document.

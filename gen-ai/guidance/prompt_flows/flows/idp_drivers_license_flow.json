@@ -1,0 +1,257 @@
+{
+    "Connections": [
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "document",
+            "TargetInput": "objectKey"
+          }
+        },
+        "Name": "FlowInputNodeFlowInputNode0Toget_doc_textS3RetrievalNode0",
+        "Source": "FlowInputNode",
+        "Target": "get_doc_text",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "s3Content",
+            "TargetInput": "doc_text"
+          }
+        },
+        "Name": "get_doc_textS3RetrievalNode0Tomap_to_jsonPromptsNode0",
+        "Source": "get_doc_text",
+        "Target": "map_to_json",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "modelCompletion",
+            "TargetInput": "content"
+          }
+        },
+        "Name": "map_to_jsonPromptsNode0Tosave_jsonS3StorageNode0",
+        "Source": "map_to_json",
+        "Target": "save_json",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "s3Uri",
+            "TargetInput": "document"
+          }
+        },
+        "Name": "save_jsonS3StorageNode0Tojson_s3uriFlowOutputNode0",
+        "Source": "save_json",
+        "Target": "json_s3uri",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "modelCompletion",
+            "TargetInput": "licence_details"
+          }
+        },
+        "Name": "map_to_jsonPromptsNode0Toanalyze_docPromptsNode0",
+        "Source": "map_to_json",
+        "Target": "analyze_doc",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "document",
+            "TargetInput": "date"
+          }
+        },
+        "Name": "FlowInputNodeFlowInputNode0Toanalyze_docPromptsNode1",
+        "Source": "FlowInputNode",
+        "Target": "analyze_doc",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "modelCompletion",
+            "TargetInput": "document"
+          }
+        },
+        "Name": "analyze_docPromptsNode0Toanalisys_resultFlowOutputNode0",
+        "Source": "analyze_doc",
+        "Target": "analisys_result",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "document",
+            "TargetInput": "objectKey"
+          }
+        },
+        "Name": "FlowInputNodeFlowInputNode0Tosave_jsonS3StorageNode1",
+        "Source": "FlowInputNode",
+        "Target": "save_json",
+        "Type": "Data"
+      }
+    ],
+    "Nodes": [
+      {
+        "Configuration": {
+          "Input": {}
+        },
+        "Name": "FlowInputNode",
+        "Outputs": [
+          {
+            "Name": "document",
+            "Type": "Object"
+          }
+        ],
+        "Type": "Input"
+      },
+      {
+        "Configuration": {
+          "Output": {}
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "document",
+            "Type": "String"
+          }
+        ],
+        "Name": "json_s3uri",
+        "Type": "Output"
+      },
+      {
+        "Configuration": {
+          "Retrieval": {
+            "ServiceConfiguration": {
+              "S3": {
+                "BucketName": "${DestinationBucket}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data.doc_text_s3key",
+            "Name": "objectKey",
+            "Type": "String"
+          }
+        ],
+        "Name": "get_doc_text",
+        "Outputs": [
+          {
+            "Name": "s3Content",
+            "Type": "String"
+          }
+        ],
+        "Type": "Retrieval"
+      },
+      {
+        "Configuration": {
+          "Prompt": {
+            "SourceConfiguration": {
+              "Resource": {
+                "PromptArn": "${DriversLicenseToJsonPromptArn}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "doc_text",
+            "Type": "String"
+          }
+        ],
+        "Name": "map_to_json",
+        "Outputs": [
+          {
+            "Name": "modelCompletion",
+            "Type": "String"
+          }
+        ],
+        "Type": "Prompt"
+      },
+      {
+        "Configuration": {
+          "Storage": {
+            "ServiceConfiguration": {
+              "S3": {
+                "BucketName": "${DestinationBucket}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "content",
+            "Type": "String"
+          },
+          {
+            "Expression": "$.data.JSON_s3key",
+            "Name": "objectKey",
+            "Type": "String"
+          }
+        ],
+        "Name": "save_json",
+        "Outputs": [
+          {
+            "Name": "s3Uri",
+            "Type": "String"
+          }
+        ],
+        "Type": "Storage"
+      },
+      {
+        "Configuration": {
+          "Prompt": {
+            "SourceConfiguration": {
+              "Resource": {
+                "PromptArn": "${DriversLicenseCheckPromptArn}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "licence_details",
+            "Type": "String"
+          },
+          {
+            "Expression": "$.data.todays_date",
+            "Name": "date",
+            "Type": "String"
+          }
+        ],
+        "Name": "analyze_doc",
+        "Outputs": [
+          {
+            "Name": "modelCompletion",
+            "Type": "String"
+          }
+        ],
+        "Type": "Prompt"
+      },
+      {
+        "Configuration": {
+          "Output": {}
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "document",
+            "Type": "String"
+          }
+        ],
+        "Name": "analisys_result",
+        "Type": "Output"
+      }
+    ]
+  }
