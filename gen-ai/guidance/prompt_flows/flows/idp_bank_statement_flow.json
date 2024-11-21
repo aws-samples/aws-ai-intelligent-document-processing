@@ -1,0 +1,147 @@
+{
+    "Connections": [
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "document",
+            "TargetInput": "objectKey"
+          }
+        },
+        "Name": "FlowInputNodeFlowInputNode0Toget_doc_textS3RetrievalNode0",
+        "Source": "FlowInputNode",
+        "Target": "get_doc_text",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "s3Content",
+            "TargetInput": "document"
+          }
+        },
+        "Name": "get_doc_textS3RetrievalNode0Todoc_textFlowOutputNode0",
+        "Source": "get_doc_text",
+        "Target": "doc_text",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "modelCompletion",
+            "TargetInput": "document"
+          }
+        },
+        "Name": "map_to_jsonPromptsNode0Todoc_jsonFlowOutputNode0",
+        "Source": "map_to_json",
+        "Target": "doc_json",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "s3Content",
+            "TargetInput": "doc_text"
+          }
+        },
+        "Name": "get_doc_textS3RetrievalNode0Tomap_to_jsonPromptsNode0",
+        "Source": "get_doc_text",
+        "Target": "map_to_json",
+        "Type": "Data"
+      }
+    ],
+    "Nodes": [
+      {
+        "Configuration": {
+          "Input": {}
+        },
+        "Name": "FlowInputNode",
+        "Outputs": [
+          {
+            "Name": "document",
+            "Type": "Object"
+          }
+        ],
+        "Type": "Input"
+      },
+      {
+        "Configuration": {
+          "Output": {}
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "document",
+            "Type": "String"
+          }
+        ],
+        "Name": "doc_text",
+        "Type": "Output"
+      },
+      {
+        "Configuration": {
+          "Retrieval": {
+            "ServiceConfiguration": {
+              "S3": {
+                "BucketName": "${DestinationBucket}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data.doc_text_s3key",
+            "Name": "objectKey",
+            "Type": "String"
+          }
+        ],
+        "Name": "get_doc_text",
+        "Outputs": [
+          {
+            "Name": "s3Content",
+            "Type": "String"
+          }
+        ],
+        "Type": "Retrieval"
+      },
+      {
+        "Configuration": {
+          "Prompt": {
+            "SourceConfiguration": {
+              "Resource": {
+                "PromptArn": "${BankStatementToJsonPromptArn}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "doc_text",
+            "Type": "String"
+          }
+        ],
+        "Name": "map_to_json",
+        "Outputs": [
+          {
+            "Name": "modelCompletion",
+            "Type": "String"
+          }
+        ],
+        "Type": "Prompt"
+      },
+      {
+        "Configuration": {
+          "Output": {}
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "document",
+            "Type": "String"
+          }
+        ],
+        "Name": "doc_json",
+        "Type": "Output"
+      }
+    ]
+  }

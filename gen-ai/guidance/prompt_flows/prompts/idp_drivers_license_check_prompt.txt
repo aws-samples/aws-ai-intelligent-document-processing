@@ -1,0 +1,7 @@
+Check the expiration date for this drivers licence and ensure that it has not expired. 
+<licence>
+{{licence_details}}
+</license>
+Todays date is {{date}}
+If the drivers license has expired, write a friendly email to the customer explning the problem and asking them to submit a valid document. 
+If the drivers licnese has not expired, retrun: DOC_OK

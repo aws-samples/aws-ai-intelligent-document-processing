@@ -1,0 +1,470 @@
+
+  IDPPromptFlowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: ${AWS::StackName}-IDPPromptFlowRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: AmazonBedrockPrompt
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'bedrock:GetPrompt'
+                Resource: 
+                  - Fn::GetAtt: [ClassifyPromptVersion1, Arn]
+                  - Fn::GetAtt: [BankStatementPromptVersion1, Arn]
+                  - Fn::GetAtt: [DriversLicensePromptVersion1, Arn]
+                  - Fn::GetAtt: [DriversLicenseCheckPromptVersion1, Arn]
+                  - Fn::GetAtt: [URLAAnalyzePromptVersion1, Arn]
+                  - Fn::GetAtt: [URLAToJsonPromptVersion1, Arn]
+                  - Fn::GetAtt: [ForReviewPromptVersion1, Arn]
+        - PolicyName: AmazonBedrockModel
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'bedrock:InvokeModel'
+                Resource: 
+                  Fn::Sub: arn:aws:bedrock:us-east-1::foundation-model/${BedrockPromptModelId}
+        - PolicyName: AmazonBedrockFlowS3Bucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: 
+                  Fn::Sub: ${DestinationS3Bucket.Arn}/*
+
+  ClassifyPrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to classify documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_CLASSIFY
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+                - Name: classes
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_classify_prompt.txt 
+          TemplateType: TEXT
+
+  ClassifyPromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [ClassifyPrompt, Arn]
+
+  ClassifyFlow:
+    Type: AWS::Bedrock::Flow
+    Properties:
+      DefinitionS3Location:
+        Bucket: 
+          Ref: PromptFlowsBucket
+        Key: 
+          Fn::Sub: ${PromptFlowsKeyPath}/flows/idp_classify_flow.json
+      DefinitionSubstitutions:
+        ClassifyPromptArn: 
+          Fn::GetAtt: [ClassifyPromptVersion1, Arn]
+      Description: Prompt flow to classify mortgage application documents
+      ExecutionRoleArn: 
+        Fn::GetAtt: [IDPPromptFlowRole, Arn]
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_CLASSIFY
+
+  ClassifyFlowVersion1:
+    Type: AWS::Bedrock::FlowVersion
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [ClassifyFlow, Arn]
+
+  ClassifyFlowAlias:
+    Type: AWS::Bedrock::FlowAlias
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [ClassifyFlow, Arn]
+      Name: latest
+      RoutingConfiguration:
+        - FlowVersion: 
+            Fn::GetAtt: [ClassifyFlowVersion1, Version]
+
+  BankStatementPrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to process bank_statement documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_BANKSTMT
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_bank_statement_to_json_prompt.txt 
+          TemplateType: TEXT
+
+  BankStatementPromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [BankStatementPrompt, Arn]
+
+  BankStatementFlow:
+    Type: AWS::Bedrock::Flow
+    Properties:
+      DefinitionS3Location:
+        Bucket: 
+          Ref: PromptFlowsBucket
+        Key: 
+          Fn::Sub: ${PromptFlowsKeyPath}/flows/idp_bank_statement_flow.json
+      DefinitionSubstitutions:
+        BankStatementToJsonPromptArn: 
+          Fn::GetAtt: [BankStatementPromptVersion1, Arn]
+        DestinationBucket: 
+          Ref: DestinationS3Bucket
+      Description: Class for bank statements. Should contain statement begin and end dates, beginning balance, ending balance, transaction list, customer name
+      ExecutionRoleArn: 
+        Fn::GetAtt: [IDPPromptFlowRole, Arn]
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_BANKSTMT
+
+  BankStatementFlowVersion1:
+    Type: AWS::Bedrock::FlowVersion
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [BankStatementFlow, Arn]
+
+  BankStatementFlowAlias:
+    Type: AWS::Bedrock::FlowAlias
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [BankStatementFlow, Arn]
+      Name: latest
+      RoutingConfiguration:
+        - FlowVersion: 
+            Fn::GetAtt: [BankStatementFlowVersion1, Version]
+
+
+  DriversLicensePrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to process drivers_license documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_DRIVERS_LIC
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_drivers_license_to_json_prompt.txt 
+          TemplateType: TEXT
+
+  DriversLicensePromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [DriversLicensePrompt, Arn]
+
+  DriversLicenseCheckPrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to check drivers_license documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_DRIVERS_LIC_CHECK
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_drivers_license_check_prompt.txt 
+          TemplateType: TEXT
+
+  DriversLicenseCheckPromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [DriversLicenseCheckPrompt, Arn]
+  
+  DriversLicenseFlow:
+    Type: AWS::Bedrock::Flow
+    Properties:
+      DefinitionS3Location:
+        Bucket: 
+          Ref: PromptFlowsBucket
+        Key: 
+          Fn::Sub: ${PromptFlowsKeyPath}/flows/idp_drivers_license_flow.json
+      DefinitionSubstitutions:
+        DriversLicenseToJsonPromptArn: 
+          Fn::GetAtt: [DriversLicensePromptVersion1, Arn]
+        DriversLicenseCheckPromptArn: 
+          Fn::GetAtt: [DriversLicenseCheckPromptVersion1, Arn]
+        DestinationBucket: 
+          Ref: DestinationS3Bucket
+      Description: Class for drivers license. Should contain date of birth or DOB, expiration date, drivers licence number or DL
+      ExecutionRoleArn: 
+        Fn::GetAtt: [IDPPromptFlowRole, Arn]
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_DRIVERS_LIC
+
+  DriversLicenseFlowVersion1:
+    Type: AWS::Bedrock::FlowVersion
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [DriversLicenseFlow, Arn]
+
+  DriversLicenseFlowAlias:
+    Type: AWS::Bedrock::FlowAlias
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [DriversLicenseFlow, Arn]
+      Name: latest
+      RoutingConfiguration:
+        - FlowVersion: 
+            Fn::GetAtt: [DriversLicenseFlowVersion1, Version]
+
+  URLAAnalyzePrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to process urla_1003 documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_URLA1003_ANALYZE
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_urla_1003_analyze_prompt.txt 
+          TemplateType: TEXT
+
+  URLAAnalyzePromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [URLAAnalyzePrompt, Arn]
+
+  URLAToJsonPrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to process urla_1003 documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_URLA1003_TOJSON
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_urla_1003_to_json_prompt.txt 
+          TemplateType: TEXT
+
+  URLAToJsonPromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [URLAToJsonPrompt, Arn]
+
+  URLA1003Flow:
+    Type: AWS::Bedrock::Flow
+    Properties:
+      DefinitionS3Location:
+        Bucket: 
+          Ref: PromptFlowsBucket
+        Key: 
+          Fn::Sub: ${PromptFlowsKeyPath}/flows/idp_urla_1003_flow.json
+      DefinitionSubstitutions:
+        URLAAnalyzePromptArn: 
+          Fn::GetAtt: [URLAAnalyzePromptVersion1, Arn]
+        URLAToJsonPromptArn: 
+          Fn::GetAtt: [URLAToJsonPromptVersion1, Arn]
+        DestinationBucket: 
+          Ref: DestinationS3Bucket
+      Description: Class for form URLA 1003. Document title is Uniform Residential Loan Application
+      ExecutionRoleArn: 
+        Fn::GetAtt: [IDPPromptFlowRole, Arn]
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_URLA1003
+
+  URLA1003FlowVersion1:
+    Type: AWS::Bedrock::FlowVersion
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [URLA1003Flow, Arn]
+
+  URLA1003FlowAlias:
+    Type: AWS::Bedrock::FlowAlias
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [URLA1003Flow, Arn]
+      Name: latest
+      RoutingConfiguration:
+        - FlowVersion: 
+            Fn::GetAtt: [URLA1003FlowVersion1, Version]
+
+  ForReviewPrompt:
+    Type: AWS::Bedrock::Prompt
+    Properties:
+      Description: Prompt to process for_review documents
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_FORREVIEW
+      Variants: 
+        - Name: Version1
+          InferenceConfiguration: 
+            Text:
+              MaxTokens: 2000
+              Temperature: 0.5
+              TopP: 0.99
+          ModelId: 
+            Ref: BedrockPromptModelId
+          TemplateConfiguration: 
+            Text:
+              InputVariables: 
+                - Name: doc_text
+              TextS3Location:
+                Bucket: 
+                  Ref: PromptFlowsBucket
+                Key: 
+                  Fn::Sub: ${PromptFlowsKeyPath}/prompts/idp_for_review_prompt.txt 
+          TemplateType: TEXT
+
+  ForReviewPromptVersion1:
+    Type: AWS::Bedrock::PromptVersion
+    Properties:
+      PromptArn: 
+        Fn::GetAtt: [ForReviewPrompt, Arn]
+
+  ForReviewFlow:
+    Type: AWS::Bedrock::Flow
+    Properties:
+      DefinitionS3Location:
+        Bucket: 
+          Ref: PromptFlowsBucket
+        Key: 
+          Fn::Sub: ${PromptFlowsKeyPath}/flows/idp_for_review_flow.json
+      DefinitionSubstitutions:
+        ForReviewPromptArn: 
+          Fn::GetAtt: [ForReviewPromptVersion1, Arn]
+        DestinationBucket: 
+          Ref: DestinationS3Bucket
+      Description: Use this class for pages that don't match other classes. Do not group pages together
+      ExecutionRoleArn: 
+        Fn::GetAtt: [IDPPromptFlowRole, Arn]
+      Name: 
+        Fn::Sub: ${AWS::StackName}-IDP_FORREVIEW
+
+  ForReviewFlowVersion1:
+    Type: AWS::Bedrock::FlowVersion
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [ForReviewFlow, Arn]
+
+  ForReviewFlowAlias:
+    Type: AWS::Bedrock::FlowAlias
+    Properties:
+      FlowArn: 
+        Fn::GetAtt: [ForReviewFlow, Arn]
+      Name: latest
+      RoutingConfiguration:
+        - FlowVersion: 
+            Fn::GetAtt: [ForReviewFlowVersion1, Version]
+
+  BedrockFlowPolicy:
+    Type: 'AWS::IAM::RolePolicy'
+    Properties:
+      PolicyName: BedrockFlowPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: 
+              - 'bedrock:GetFlow'
+            Resource: 
+              - Fn::GetAtt: [ClassifyFlow, Arn]
+              - Fn::GetAtt: [BankStatementFlow, Arn]
+              - Fn::GetAtt: [DriversLicenseFlow, Arn]
+              - Fn::GetAtt: [URLA1003Flow, Arn]
+              - Fn::GetAtt: [ForReviewFlow, Arn]
+      RoleName: 
+        Ref: IDPPromptFlowRole

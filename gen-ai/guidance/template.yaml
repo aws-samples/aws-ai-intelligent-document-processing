@@ -1,0 +1,652 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Automate document processing with Amazon Bedrock Prompt Flows (uksb-gr31c8w2f9).
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+
+Parameters:
+  PromptFlowsBucket:
+    Description: Bucket where prompt flow templates are uploaded 
+    Type: String
+
+  PromptFlowsKeyPath:
+    Description: Folder prompt flow templates are uploaded 
+    Type: String
+
+  BedrockPromptModelId:
+    Description: Default model to use when creating rompts
+    Type: String
+    Default: anthropic.claude-3-sonnet-20240229-v1:0
+
+
+Resources:
+
+#Add Source S3 bucket
+  SourceS3Bucket:
+    Type: AWS::S3::Bucket
+    # checkov:skip=CKV_AWS_18: Ensure the S3 bucket has access logging enabled
+      # Note: to enable bucket logging add add a LoggingConfiguration property and specify your S3 destination for bucket logging
+      # LoggingConfiguration:
+      #   DestinationBucketName: [YOUR LOGGING BUCKET]
+      #   LogFilePrefix: !Sub ${AWS::StackName}
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+
+  #Add Destination S3 bucket
+  DestinationS3Bucket:
+    Type: AWS::S3::Bucket
+    # checkov:skip=CKV_AWS_18: Ensure the S3 bucket has access logging enabled
+      # Note: to enable bucket logging add add a LoggingConfiguration property and specify your S3 destination for bucket logging
+      # LoggingConfiguration:
+      #   DestinationBucketName: [YOUR LOGGING BUCKET]
+      #   LogFilePrefix: !Sub ${AWS::StackName}
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+# Add SNS topic for Textract job completion. This SNS will also trigger Lambda function DocClassificationHandlerFunction.
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    # checkov:skip=CKV_AWS_26: Ensure all data stored in the SNS topic is encrypted
+    # Note: SNS topic is used here to pass textract JobID and no details about the job or content
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-NotificationTopic
+      DisplayName: Textract Notification Topic
+      Subscription:
+        - Endpoint: !GetAtt ClassifyQueue.Arn
+          Protocol: sqs
+
+# Add SNS Topic role to above SNS topic which provides permissions to invoke this SNS topic from ProcessS3FilesFunction lambda function
+  NotificationTopicRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-NotificationTopicRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: textract.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: InvokeSNSTopicPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "sns:Publish"
+                Resource: !Ref NotificationTopic
+
+  ClassifyQueue:
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    # AWS SQS managed SSE is enabled, to use your own KMS keys see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sqs-queue.html#cfn-sqs-queue-kmsmasterkeyid
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-classify_queue
+      VisibilityTimeout: 600
+      SqsManagedSseEnabled: true
+      RedrivePolicy: 
+        deadLetterTargetArn: !GetAtt ClassifyDeadLetterQueue.Arn
+        maxReceiveCount: 5
+  ClassifyDeadLetterQueue: 
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    Properties:
+      SqsManagedSseEnabled: true
+
+  ClassifyQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ClassifyQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt ClassifyQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref NotificationTopic
+                
+  AnalyzeQueue:
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    # AWS SQS managed SSE is enabled, to use your own KMS keys see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-sqs-queue.html#cfn-sqs-queue-kmsmasterkeyid
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-analyze_queue
+      VisibilityTimeout: 600
+      SqsManagedSseEnabled: true
+      RedrivePolicy: 
+        deadLetterTargetArn: !GetAtt AnalyzeDeadLetterQueue.Arn
+        maxReceiveCount: 5
+  AnalyzeDeadLetterQueue: 
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    Properties:
+      SqsManagedSseEnabled: true
+
+  'Fn::Transform':
+    Name: 'AWS::Include'
+    Parameters:
+      Location: ./prompt_flows/promptflows.yaml
+
+# Create a lambda layer for textractor. The archive file for textractor is present in lambda/layers folder
+  TextractorLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ${AWS::StackName}-TextractorLayer
+      Description: Textractor lambda layer
+      ContentUri: lambda/layers/textractor/textractor-lambda-p312-pdf.zip
+      CompatibleRuntimes:
+        - python3.9
+        - python3.10
+        - python3.11
+        - python3.12
+
+# Note: Lambda functions in this sample are not deployed inside a VPC. To add these to your VPC, add a VpcConfig property with the appripriate configuration for your VPC
+# you will also need to configure the VPC endpoints for AmazonTextract, AmazonBedrock, and AmazonS3. More about VPC endpoints here https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#access-service-though-endpoint
+# Note: Lambda environment are encrypted by AWS managed key by default. To use your own key see https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-kmskeyarn
+
+# This Lambda function will classify the mortgage documents to generate artifacts, extract artifacts in json format and create a report. It's triggered by textract SNS topic
+  DocClassificationHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
+    # checkov:skip=CKV_AWS_173: Check encryption settings for Lambda environment variable
+    # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
+    Properties:
+      CodeUri: lambda/doc_classification_flow_handler/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      ReservedConcurrentExecutions: 100
+      #Add lambda timeout for 1 minute 
+      Timeout: 60     
+      Architectures:
+        - x86_64  
+      #Add TextractorLayer to this lambda function
+      Layers:
+        - !Ref TextractorLayer
+      Policies:
+        - S3CrudPolicy:
+            BucketName:
+              Ref: DestinationS3Bucket       
+        - S3CrudPolicy:
+            BucketName:
+              Ref: SourceS3Bucket
+        - SQSPollerPolicy:
+            QueueName: !GetAtt ClassifyQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AnalyzeQueue.QueueName
+        - Statement:
+            - Sid: BedrockPolicy
+              Effect: Allow
+              Action:
+                - "bedrock:InvokeFlow"
+              Resource: !GetAtt ClassifyFlowAlias.Arn
+        - Statement:
+            - Sid: TextractGetDocumentAnalysis
+              Effect: Allow
+              Action:
+                - "textract:GetDocumentAnalysis"
+              Resource: "*"   
+        - DynamoDBReadPolicy:
+            TableName: !Ref IDPTextractJobsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IDPClassesTable
+      Environment:
+        Variables:
+          FLOW_ALIAS_IDENTIFIER: !GetAtt ClassifyFlowAlias.Id
+          FLOW_IDENTIFIER: !GetAtt ClassifyFlow.Id
+          OUTPUT_BUCKET_NAME: !Ref DestinationS3Bucket
+          IDP_TEXTRACT_JOBS_TABLE_NAME: !Ref IDPTextractJobsTable
+          IN_QUEUE_URL: !Ref ClassifyQueue
+          OUT_QUEUE_URL: !Ref AnalyzeQueue
+          IDP_FLOW_CLASS_TABLE_NAME: !Ref IDPClassesTable
+      # Add a trigger from SNS topic
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ClassifyQueue.Arn
+            BatchSize: 1
+          
+# Add a Lambda function TextractAsyncHandler
+  ProcessS3FilesFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
+    # checkov:skip=CKV_AWS_173: Check encryption settings for Lambda environment variable
+    # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
+    Properties:
+      CodeUri: lambda/s3_event_handler/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      ReservedConcurrentExecutions: 100
+      Architectures:
+        - x86_64  
+      #Add crud policy to source and destination S3 bucket
+      Policies:
+        - S3ReadPolicy:
+            BucketName:
+              Ref: SourceS3Bucket   
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotificationTopic.TopicName
+        # Add TextractDetectAnalyzePolicy
+        - Statement:
+            - Sid: TextractDetectAnalyzePolicy
+              Effect: Allow
+              Action:
+                - "textract:StartDocumentTextDetection"
+                - "textract:StartDocumentAnalysis"
+                - "textract:AnalyzeDocument"
+              Resource: "*"         
+        # Add policy for dynamodb put item  
+        - DynamoDBWritePolicy:
+            TableName: !Ref IDPTextractJobsTable           
+      Environment:
+        Variables:
+          TEXTRACT_NOTIFICATION_TOPIC_ARN: !Ref NotificationTopic
+          TEXTRACT_NOTIFICATION_ROLE_ARN: !GetAtt NotificationTopicRole.Arn
+          IDP_TEXTRACT_JOBS_TABLE_NAME: !Ref IDPTextractJobsTable
+
+      Events:
+        ProcessS3FilesS3Event:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.s3
+              detail-type:
+                - "Object Created"
+              detail:
+                bucket:
+                  name:
+                    - !Ref SourceS3Bucket
+
+  DocAnalysisHandlerFunction:
+    Type: AWS::Serverless::Function
+    # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
+    # checkov:skip=CKV_AWS_173: Check encryption settings for Lambda environment variable
+    # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
+    Properties:
+      CodeUri: lambda/doc_analysis_flow_handler/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      ReservedConcurrentExecutions: 100
+      Timeout: 60 
+      Architectures:
+        - x86_64  
+      Environment:
+        Variables:
+          OUTPUT_BUCKET_NAME: !Ref DestinationS3Bucket
+          QUEUE_URL: !Ref AnalyzeQueue
+          VALIDATION_QUEUE_URL: !Ref ValidationQueue
+      Policies:
+        - SQSPollerPolicy:
+            QueueName: !GetAtt AnalyzeQueue.QueueName
+        - S3CrudPolicy:
+            BucketName: !Ref DestinationS3Bucket
+        - Statement:
+            - Sid: BedrockPolicy
+              Effect: Allow
+              Action:
+                - "bedrock:InvokeFlow"
+              Resource: "*"
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ValidationQueue.QueueName
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AnalyzeQueue.Arn
+            BatchSize: 1
+  
+  DocValidationHandlerFunction:
+    Type: AWS::Serverless::Function
+    # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
+    # checkov:skip=CKV_AWS_173: Check encryption settings for Lambda environment variable
+    # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)    
+    Properties:
+      CodeUri: lambda/doc_validation_handler/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      ReservedConcurrentExecutions: 100
+      Timeout: 60
+      Layers: 
+        - !Sub arn:aws:lambda:us-east-1:017000801446:layer:AWSLambdaPowertoolsPythonV3-python312-x86_64:2
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          OUTPUT_BUCKET_NAME: !Ref DestinationS3Bucket
+          POWERTOOLS_SERVICE_NAME: DocValidationService
+          POWERTOOLS_LOGGER_LOG_EVENT: true
+      Policies:
+        # Full S3 access to destination bucket
+        - S3CrudPolicy:
+            BucketName: !Ref DestinationS3Bucket
+        # SQS permissions for reading from validation queue
+        - SQSPollerPolicy:
+            QueueName: !GetAtt ValidationQueue.QueueName
+        # Additional explicit S3 permissions
+        - Statement:
+            - Sid: S3BucketAccess
+              Effect: Allow
+              Action:
+                - 's3:PutObject'
+                - 's3:GetObject'
+                - 's3:ListBucket'
+              Resource:
+                - !Sub 'arn:aws:s3:::${DestinationS3Bucket}'
+                - !Sub 'arn:aws:s3:::${DestinationS3Bucket}/*'
+      Events:
+        DocumentAnalysisComplete:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ValidationQueue.Arn
+            BatchSize: 1
+
+  ValidationQueue:
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-validation_queue
+      VisibilityTimeout: 600
+      SqsManagedSseEnabled: true
+      RedrivePolicy: 
+        deadLetterTargetArn: !GetAtt ValidationDeadLetterQueue.Arn
+        maxReceiveCount: 5
+
+  ValidationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    # checkov:skip=CKV_AWS_27: Ensure all data stored in the SQS queue is encrypted
+    Properties:
+      SqsManagedSseEnabled: true
+
+  ValidationQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ValidationQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt ValidationQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt DocAnalysisHandlerFunction.Arn
+  
+  PopulateIDPClassesFunction:
+    Type: AWS::Serverless::Function
+    # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
+    # checkov:skip=CKV_AWS_173: Check encryption settings for Lambda environment variable
+    # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
+    Properties:
+      InlineCode: |
+        import json
+        import boto3
+        import os
+        from botocore.exceptions import ClientError
+        import logging
+        import traceback
+        import cfnresponse
+
+        dynamodb = boto3.client('dynamodb')
+        agent = boto3.client(service_name='bedrock-agent')
+
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+
+        IDP_FLOW_CLASS_TABLE_NAME = os.environ.get('IDP_FLOW_CLASS_TABLE_NAME')
+
+        def lambda_handler(event, context):
+          """
+          AWS Lambda handler function to process SQS events containing Textract job results.
+
+          Args:
+            sqs_event (dict): The SQS event containing Textract job information.
+            context (Any): The Lambda context object.
+
+          Returns:
+            dict: A response containing processed document information.
+          """
+          logger.info(f"Processing event: {json.dumps(event)}")
+
+          request_type = event.get('RequestType')
+          physical_id = event.get('PhysicalResourceId')
+          if request_type == "Delete": 
+              status = cfnresponse.SUCCESS
+              cfnresponse.send(event, context, status, {}, physical_id)
+              return True
+
+          status = cfnresponse.FAILED
+          try:	
+            # 1. Get the supported classes and invoke the prompt flow
+            class_list = process_args(event['ResourceProperties']['Classes'])
+
+            # 2. Save save list items to dynamo
+            status = save_supported_class_list_to_dynamodb(class_list)
+
+          except Exception as e:
+            logger.error('Exception:%s' % e)
+            logger.info(traceback.format_exc())
+            status = cfnresponse.FAILED
+          finally:
+            cfnresponse.send(event, context, status, {}, physical_id)
+
+
+        def save_supported_class_list_to_dynamodb(supported_class_list):
+          """Save the list of supported flow classes to DynamoDB."""
+          for class_item in supported_class_list:
+            dynamodb.put_item(
+              TableName=IDP_FLOW_CLASS_TABLE_NAME,
+              Item={
+                'class_name': {'S': class_item['class_name']},
+                'flow_name': {'S': class_item['flow_name']},
+                'expected_inputs': {'S': class_item['description']},
+                'flow_id': {'S': class_item['flow_id']},
+                'flow_alias_id': {'S': class_item['alias_id']}
+              }
+            )
+          return cfnresponse.SUCCESS
+
+
+
+
+        def get_flow_details(flow_id):
+            """
+            Retrieve the description and alias ID for a specific flow.
+
+            Args:
+                flow_id (str): The ID of the flow to retrieve details for.
+
+            Returns:
+                Dict[str, str]: A dictionary containing the flow name, description, and alias ID.
+            """
+            try:
+                # Get the flow details
+                flow = agent.get_flow(flowIdentifier=flow_id)
+                
+                # Get the flow aliases
+                aliases = agent.list_flow_aliases(flowIdentifier=flow_id)
+                
+                # Find the 'latest' alias
+                latest_alias = next(
+                    (alias for alias in aliases['flowAliasSummaries'] if alias['name'] == "latest"),
+                    None
+                )
+                
+                # Prepare the result
+                result = {
+                    "name": flow.get('name'),
+                    "description": flow.get('description', 'No description available'),
+                    "alias_id": latest_alias['id'] if latest_alias else None
+                }
+                
+                return result
+            
+            except Exception as e:
+                logger.error(f"Error retrieving flow details: {str(e)}")
+                return None
+                
+        def process_args(classes):
+            """
+            Process the classes from the input event and retrieve details for each class.
+
+            Args:
+                event (dict): The input event containing class information.
+
+            Returns:
+                list: A list of dictionary items containing details for each class.
+            """
+            result = []
+
+            for class_name, class_info in classes.items():
+                flow_id = class_info.get('flow_id')
+                if flow_id:
+                    flow_details = get_flow_details(flow_id)
+                    if flow_details:
+                        result.append({
+                            "flow_name" : flow_details['name'],
+                            "class_name" : class_name,
+                            "flow_id": flow_id,
+                            "description": flow_details['description'],
+                            "alias_id": flow_details['alias_id']
+                        })
+                    else:
+                        logger.info(f"Failed to retrieve details for flow: {class_name}")
+                else:
+                    logger.info(f"No flow_id provided for flow: {class_name}")
+
+            return result
+      Handler: index.lambda_handler
+      Runtime: python3.12
+      ReservedConcurrentExecutions: 1
+      Timeout: 20 
+      Environment:
+        Variables:
+          IDP_FLOW_CLASS_TABLE_NAME: !Ref IDPClassesTable
+      Architectures:
+        - x86_64  
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref IDPClassesTable             
+        - Statement:
+            - Sid: BedrockPolicy
+              Effect: Allow
+              Action:
+                - "bedrock:ListFlows"
+                - "bedrock:ListFlowAliases"
+                - "bedrock:ListFlowVersions"
+                - "bedrock:GetFlow"
+                - "bedrock:GetFlowAlias"
+                - "bedrock:GetFlowVersion"
+              Resource: "*"
+
+# Add a DynamoDB table IDP_TEXTRACT_JOBS_TABLE
+  IDPTextractJobsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub ${AWS::StackName}-IDP_TEXTRACT_JOBS
+      PrimaryKey:
+        Name: job_id
+        Type: String
+
+# Add a DynamoDB table IDP_CLASSES
+  IDPClassesTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub ${AWS::StackName}-IDP_CLASS_LIST
+      PrimaryKey:
+        Name: class_name
+        Type: String
+
+
+  PopulateIDPClasses:
+    Type: Custom::PopulateIDPClasses
+    Properties:
+      ServiceTimeout: 600
+      ServiceToken:
+        Fn::GetAtt:
+        - PopulateIDPClassesFunction
+        - Arn
+      Classes:
+        BANK_STATEMENT: 
+          flow_id: !GetAtt BankStatementFlow.Id
+          flow_alias_id: !GetAtt BankStatementFlowAlias.Id
+        DRIVERS_LICENSE: 
+          flow_id: !GetAtt DriversLicenseFlow.Id
+          flow_alias_id: !GetAtt DriversLicenseFlowAlias.Id
+        URLA_1003:
+          flow_id: !GetAtt URLA1003Flow.Id
+          flow_alias_id: !GetAtt URLA1003FlowAlias.Id
+        FOR_REVIEW:
+          flow_id: !GetAtt ForReviewFlow.Id
+          flow_alias_id: !GetAtt ForReviewFlowAlias.Id
+
+
+
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+
+#Add Source S3 bucket
+  SourceS3Bucket:
+    Description: "Source S3 Bucket"
+    Value: !Ref SourceS3Bucket
+#Add Destination S3 bucket
+  DestinationS3Bucket:
+    Description: "Destination S3 Bucket"
+    Value: !Ref DestinationS3Bucket
+#Class List DynamoDB Table
+  IDPClassesTable:
+    Description: "DynamoDB Table for IDP Classes"
+    Value: !Ref IDPClassesTable
+  CopySampleFiles:
+    Description: "Command to copy sample files"
+    Value: !Sub aws s3 sync ./sample_files/customer123 s3://${SourceS3Bucket}/customer123
+  GetResultFiles:
+    Description: "Command to download result files"
+    Value: !Sub aws s3 sync s3://${DestinationS3Bucket}/customer123 ./result_files/customer123 
+#Add Validation Queue 
+  ValidationQueueUrl:
+    Description: "URL of the validation queue"
+    Value: !Ref ValidationQueue
+  ValidationQueueArn:
+    Description: "ARN of the validation queue"
+    Value: !GetAtt ValidationQueue.Arn

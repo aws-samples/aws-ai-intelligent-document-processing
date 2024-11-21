@@ -1,0 +1,170 @@
+Analyze the provided Mortgage Application Form (URLA-1003):
+
+<URLA-1003>
+{{doc_text}}
+</URLA-1003>
+
+Provide a structured JSON object containing the following information:
+
+{
+  "applicant": {
+    "fullName": "",
+    "ssn": "",  // Last 4 digits only
+    "dateOfBirth": "",
+    "maritalStatus": "",
+    "currentAddress": {
+      "street": "",
+      "city": "",
+      "state": "",
+      "zip": "",
+      "yearsAtAddress": 0
+    },
+    "phoneNumber": "",
+    "email": ""
+  },
+  "coApplicant": {
+    // Same structure as applicant, if applicable
+  },
+  "loanInfo": {
+    "amountRequested": 0,
+    "purpose": "",
+    "propertyUse": "",
+    "loanTerm": 0,
+    "productType": "",
+    "refinanceDetails": {
+      // If applicable
+    }
+  },
+  "propertyInfo": {
+    "address": {
+      "street": "",
+      "city": "",
+      "state": "",
+      "zip": ""
+    },
+    "numberOfUnits": 0,
+    "propertyValue": 0,
+    "propertyType": "",
+    "yearBuilt": 0,
+    "constructionDetails": {
+      // If applicable
+    }
+  },
+  "employmentInfo": [
+    {
+      "applicantType": "",  // "primary" or "coApplicant"
+      "employerName": "",
+      "employerAddress": "",
+      "position": "",
+      "yearsOnJob": 0,
+      "yearsInProfession": 0,
+      "selfEmployed": false,
+      "monthlyIncome": 0
+    }
+  ],
+  "incomeDetails": {
+    "baseIncome": 0,
+    "overtime": 0,
+    "bonuses": 0,
+    "commissions": 0,
+    "otherIncome": [
+      {
+        "source": "",
+        "amount": 0
+      }
+    ],
+    "totalMonthlyIncome": 0
+  },
+  "assets": {
+    "checkingAccounts": [
+      {
+        "institution": "",
+        "balance": 0
+      }
+    ],
+    "savingsAccounts": [
+      {
+        "institution": "",
+        "balance": 0
+      }
+    ],
+    "investments": [
+      {
+        "type": "",
+        "value": 0
+      }
+    ],
+    "retirementAccounts": [
+      {
+        "type": "",
+        "value": 0
+      }
+    ],
+    "realEstateOwned": [
+      {
+        "address": "",
+        "value": 0
+      }
+    ],
+    "totalLiquidAssets": 0
+  },
+  "liabilities": {
+    "creditCards": [
+      {
+        "creditor": "",
+        "balance": 0,
+        "monthlyPayment": 0
+      }
+    ],
+    "autoLoans": [
+      {
+        "creditor": "",
+        "balance": 0,
+        "monthlyPayment": 0
+      }
+    ],
+    "studentLoans": [
+      {
+        "creditor": "",
+        "balance": 0,
+        "monthlyPayment": 0
+      }
+    ],
+    "otherMortgages": [
+      {
+        "creditor": "",
+        "balance": 0,
+        "monthlyPayment": 0
+      }
+    ],
+    "alimonyChildSupport": {
+      "monthlyPayment": 0
+    },
+    "totalMonthlyDebtPayments": 0
+  },
+  "transactionDetails": {
+    "purchasePrice": 0,
+    "improvements": 0,
+    "estimatedPrepaidItems": 0,
+    "estimatedClosingCosts": 0,
+    "discountPoints": 0,
+    "subordinateFinancing": 0
+  },
+  "declarations": {
+    "outstandingJudgments": false,
+    "bankruptcyHistory": {
+      "hasBankruptcy": false,
+      "yearsAgo": 0
+    },
+    "foreclosureHistory": {
+      "hasForeclosure": false,
+      "yearsAgo": 0
+    },
+    "lawsuitInvolvement": false,
+    "federalDebtDelinquency": false
+  }
+}
+
+
+
+Ensure that the JSON output is properly formatted and that all numeric values are represented as numbers, not strings. 

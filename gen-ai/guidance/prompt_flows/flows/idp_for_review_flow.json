@@ -1,0 +1,121 @@
+{
+    "Connections": [
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "document",
+            "TargetInput": "objectKey"
+          }
+        },
+        "Name": "FlowInputNodeFlowInputNode0Toget_doc_textS3RetrievalNode0",
+        "Source": "FlowInputNode",
+        "Target": "get_doc_text",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "s3Content",
+            "TargetInput": "doc_text"
+          }
+        },
+        "Name": "get_doc_textS3RetrievalNode0Toanalyze_docPromptsNode0",
+        "Source": "get_doc_text",
+        "Target": "analyze_doc",
+        "Type": "Data"
+      },
+      {
+        "Configuration": {
+          "Data": {
+            "SourceOutput": "modelCompletion",
+            "TargetInput": "document"
+          }
+        },
+        "Name": "analyze_docPromptsNode0ToFlowOutputNodeFlowOutputNode0",
+        "Source": "analyze_doc",
+        "Target": "FlowOutputNode",
+        "Type": "Data"
+      }
+    ],
+    "Nodes": [
+      {
+        "Configuration": {
+          "Input": {}
+        },
+        "Name": "FlowInputNode",
+        "Outputs": [
+          {
+            "Name": "document",
+            "Type": "Object"
+          }
+        ],
+        "Type": "Input"
+      },
+      {
+        "Configuration": {
+          "Output": {}
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "document",
+            "Type": "String"
+          }
+        ],
+        "Name": "FlowOutputNode",
+        "Type": "Output"
+      },
+      {
+        "Configuration": {
+          "Retrieval": {
+            "ServiceConfiguration": {
+              "S3": {
+                "BucketName": "${DestinationBucket}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data.doc_text_s3key",
+            "Name": "objectKey",
+            "Type": "String"
+          }
+        ],
+        "Name": "get_doc_text",
+        "Outputs": [
+          {
+            "Name": "s3Content",
+            "Type": "String"
+          }
+        ],
+        "Type": "Retrieval"
+      },
+      {
+        "Configuration": {
+          "Prompt": {
+            "SourceConfiguration": {
+              "Resource": {
+                "PromptArn": "${ForReviewPromptArn}"
+              }
+            }
+          }
+        },
+        "Inputs": [
+          {
+            "Expression": "$.data",
+            "Name": "doc_text",
+            "Type": "String"
+          }
+        ],
+        "Name": "analyze_doc",
+        "Outputs": [
+          {
+            "Name": "modelCompletion",
+            "Type": "String"
+          }
+        ],
+        "Type": "Prompt"
+      }
+    ]
+  }

@@ -1,0 +1,100 @@
+{
+    "Connections": [
+        {
+            "Configuration": {
+                "Data": {
+                    "SourceOutput": "document",
+                    "TargetInput": "doc_text"
+                }
+            },
+            "Name": "FlowInputNodeFlowInputNode0Toclassify_documentPromptsNode0",
+            "Source": "FlowInputNode",
+            "Target": "classify_document",
+            "Type": "Data"
+        },
+        {
+            "Configuration": {
+                "Data": {
+                    "SourceOutput": "modelCompletion",
+                    "TargetInput": "document"
+                }
+            },
+            "Name": "classify_documentPromptsNode0ToFlowOutputNodeFlowOutputNode0",
+            "Source": "classify_document",
+            "Target": "FlowOutputNode",
+            "Type": "Data"
+        },
+        {
+            "Configuration": {
+                "Data": {
+                    "SourceOutput": "document",
+                    "TargetInput": "classes"
+                }
+            },
+            "Name": "FlowInputNodeFlowInputNode0Toclassify_documentPromptsNode1",
+            "Source": "FlowInputNode",
+            "Target": "classify_document",
+            "Type": "Data"
+        }
+    ],
+    "Nodes": [
+        {
+            "Configuration": {
+                "Input": {}
+            },
+            "Name": "FlowInputNode",
+            "Outputs": [
+                {
+                    "Name": "document",
+                    "Type": "Object"
+                }
+            ],
+            "Type": "Input"
+        },
+        {
+            "Configuration": {
+                "Output": {}
+            },
+            "Inputs": [
+                {
+                    "Expression": "$.data",
+                    "Name": "document",
+                    "Type": "String"
+                }
+            ],
+            "Name": "FlowOutputNode",
+            "Type": "Output"
+        },
+        {
+            "Configuration": {
+                "Prompt": {
+                    "SourceConfiguration": {
+                        "Resource": {
+                            "PromptArn": "${ClassifyPromptArn}"
+                        }
+                    }
+                }
+            },
+            "Inputs": [
+                {
+                    "Expression": "$.data.doc_text",
+                    "Name": "doc_text",
+                    "Type": "String"
+                },
+                {
+                    "Expression": "$.data.class_list",
+                    "Name": "classes",
+                    "Type": "String"
+                }
+            ],
+            "Name": "classify_document",
+            "Outputs": [
+                {
+                    "Name": "modelCompletion",
+                    "Type": "String"
+                }
+            ],
+            "Type": "Prompt"
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+Analyze the provided Bank Statement:
+
+<STATEMENT>
+{{doc_text}}
+</STATEMENT>
+
+Provide a structured JSON object containing the following information:
+
+{
+  "accountInfo": {
+    "accountHolderName": "",
+    "accountNumber": "", // Last 4 digits only
+    "bankName": "",
+    "bankAddress": {
+      "street": "",
+      "city": "",
+      "state": "",
+      "zip": ""
+    }
+  },
+  "statementPeriod": {
+    "startDate": "",
+    "endDate": ""
+  },
+  "balanceSummary": {
+    "beginningBalance": 0,
+    "endingBalance": 0,
+    "totalDeposits": 0,
+    "totalWithdrawals": 0
+  },
+  "transactions": [
+    {
+      "date": "",
+      "description": "",
+      "amount": 0,
+      "type": "credit" | "debit",
+      "balance": 0
+    }
+  ],
+  "recurringTransactions": [
+    {
+      "description": "",
+      "averageAmount": 0,
+      "frequency": ""
+    }
+  ],
+  "fees": [
+    {
+      "description": "",
+      "amount": 0
+    }
+  ],
+  "interestEarned": 0,
+  "overdraftInfo": {
+    "overdraftOccurrences": 0,
+    "totalOverdraftFees": 0
+  }
+}
