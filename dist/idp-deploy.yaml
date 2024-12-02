@@ -227,6 +227,7 @@ Resources:
                   - comprehendmedical:StartRxNormInferenceJob
                   - comprehendmedical:StartSNOMEDCTInferenceJob
                   - comprehendmedical:StartPHIDetectionJob
+                  - comprehend:StartDocumentClassificationJob
                 Resource: '*'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
