@@ -14,7 +14,7 @@ def get_response_from_claude(prompt):
 	"""
 
 	# Invoke the model with the prompt and the encoded image
-	model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+	model_id = "anthropic.claude-3-haiku-20240307-v1:0"
 	request_body = {
 		"anthropic_version": "bedrock-2023-05-31",
 		"max_tokens": 2048,
