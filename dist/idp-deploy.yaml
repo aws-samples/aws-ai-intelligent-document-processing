@@ -12,85 +12,7 @@ Parameters:
     Description: The domain name of the Sagemaker studio instance
     Default: 'IDPSagemakerDomain'
 
-Mappings:
-  JupyterMap:
-    us-east-1:
-      jupyterimage: "arn:aws:sagemaker:us-east-1:081325390199:image/jupyter-server-3"
-    us-east-2:
-      jupyterimage: "arn:aws:sagemaker:us-east-2:429704687514:image/jupyter-server-3"
-    us-west-1:
-      jupyterimage: "arn:aws:sagemaker:us-west-1:742091327244:image/jupyter-server-3"
-    us-west-2:
-      jupyterimage: "arn:aws:sagemaker:us-west-2:236514542706:image/jupyter-server-3"
-    af-south-1:
-      jupyterimage: "arn:aws:sagemaker:af-south-1:559312083959:image/jupyter-server-3"
-    ap-east-1:
-      jupyterimage: "arn:aws:sagemaker:ap-east-1:493642496378:image/jupyter-server-3"
-    ap-south-1:
-      jupyterimage: "arn:aws:sagemaker:ap-south-1:394103062818:image/jupyter-server-3"
-    ap-northeast-2:
-      jupyterimage: "arn:aws:sagemaker:ap-northeast-2:806072073708:image/jupyter-server-3"
-    ap-southeast-1:
-      jupyterimage: "arn:aws:sagemaker:ap-southeast-1:492261229750:image/jupyter-server-3"
-    ap-southeast-2:
-      jupyterimage: "arn:aws:sagemaker:ap-southeast-2:452832661640:image/jupyter-server-3"
-    ap-northeast-1:
-      jupyterimage: "arn:aws:sagemaker:ap-northeast-1:102112518831:image/jupyter-server-3"
-    ca-central-1:
-      jupyterimage: "arn:aws:sagemaker:ca-central-1:310906938811:image/jupyter-server-3"
-    eu-central-1:
-      jupyterimage: "arn:aws:sagemaker:eu-central-1:936697816551:image/jupyter-server-3"
-    eu-west-1:
-      jupyterimage: "arn:aws:sagemaker:eu-west-1:470317259841:image/jupyter-server-3"
-    eu-west-2:
-      jupyterimage: "arn:aws:sagemaker:eu-west-2:712779665605:image/jupyter-server-3"
-    eu-west-3:
-      jupyterimage: "arn:aws:sagemaker:eu-west-3:615547856133:image/jupyter-server-3"
-    eu-north-1:
-      jupyterimage: "arn:aws:sagemaker:eu-north-1:243637512696:image/jupyter-server-3"
-    eu-south-1:
-      jupyterimage: "arn:aws:sagemaker:eu-south-1:592751261982:image/jupyter-server-3"
-    sa-east-1:
-      jupyterimage: "arn:aws:sagemaker:sa-east-1:782484402741:image/jupyter-server-3"
-  RegionMap:
-    us-east-1:
-      datascience: "arn:aws:sagemaker:us-east-1:081325390199:image/datascience-1.0"
-    us-east-2:
-      datascience: "arn:aws:sagemaker:us-east-2:429704687514:image/datascience-1.0"
-    us-west-1:
-      datascience: "arn:aws:sagemaker:us-west-1:742091327244:image/datascience-1.0"
-    us-west-2:
-      datascience: "arn:aws:sagemaker:us-west-2:236514542706:image/datascience-1.0"
-    af-south-1:
-      datascience: "arn:aws:sagemaker:af-south-1:559312083959:image/datascience-1.0"
-    ap-east-1:
-      datascience: "arn:aws:sagemaker:ap-east-1:493642496378:image/datascience-1.0"
-    ap-south-1:
-      datascience: "arn:aws:sagemaker:ap-south-1:394103062818:image/datascience-1.0"
-    ap-northeast-2:
-      datascience: "arn:aws:sagemaker:ap-northeast-2:806072073708:image/datascience-1.0"
-    ap-southeast-1:
-      datascience: "arn:aws:sagemaker:ap-southeast-1:492261229750:image/datascience-1.0"
-    ap-southeast-2:
-      datascience: "arn:aws:sagemaker:ap-southeast-2:452832661640:image/datascience-1.0"
-    ap-northeast-1:
-      datascience: "arn:aws:sagemaker:ap-northeast-1:102112518831:image/datascience-1.0"
-    ca-central-1:
-      datascience: "arn:aws:sagemaker:ca-central-1:310906938811:image/datascience-1.0"
-    eu-central-1:
-      datascience: "arn:aws:sagemaker:eu-central-1:936697816551:image/datascience-1.0"
-    eu-west-1:
-      datascience: "arn:aws:sagemaker:eu-west-1:470317259841:image/datascience-1.0"
-    eu-west-2:
-      datascience: "arn:aws:sagemaker:eu-west-2:712779665605:image/datascience-1.0"
-    eu-west-3:
-      datascience: "arn:aws:sagemaker:eu-west-3:615547856133:image/datascience-1.0"
-    eu-north-1:
-      datascience: "arn:aws:sagemaker:eu-north-1:243637512696:image/datascience-1.0"
-    eu-south-1:
-      datascience: "arn:aws:sagemaker:eu-south-1:488287956546:image/sagemaker-data-wrangler-1.0"
-    sa-east-1:
-      datascience: "arn:aws:sagemaker:sa-east-1:782484402741:image/datascience-1.0"
+
 
 Resources:
   LambdaExecutionRole:
@@ -306,43 +228,46 @@ Resources:
           import cfnresponse
           sagemaker = boto3.client('sagemaker')
           def lambda_handler(event, context):
-              print(event)
               script = textwrap.dedent('''\
               #!/bin/bash
-              set -eux
+              set -eu
               echo "Cloning IDP repository"
-              export REPOSITORY_URL="https://github.com/aws-samples/aws-ai-intelligent-document-processing"
-              git -C /home/sagemaker-user clone $REPOSITORY_URL
-              echo "Cloning complete"''')
+              cd /home/sagemaker-user
+              if [ ! -d "aws-ai-intelligent-document-processing" ]; then
+                  git clone https://github.com/aws-samples/aws-ai-intelligent-document-processing.git idp_workshop || {
+                      echo "Git clone failed, continuing without repository"
+                      exit 0
+                  }
+              else
+                  echo "Repository already exists, skipping clone"
+              fi
+              echo "Setup complete"''')
               script_byte = script.encode("ascii")
               base64_bytes = base64.b64encode(script_byte)
               base64_string = base64_bytes.decode("ascii")
               if 'RequestType' in event and event['RequestType'] == 'Create':
                 domain_id = event['ResourceProperties']['DomainID']
-                user_profile = event['ResourceProperties']['UserProfileName']
                 try:
                     resp = sagemaker.create_studio_lifecycle_config(StudioLifecycleConfigName='idp-git-bootstrap',
                                                                     StudioLifecycleConfigContent=base64_string,
-                                                                    StudioLifecycleConfigAppType='JupyterServer')
+                                                                    StudioLifecycleConfigAppType='JupyterLab')
                     lcc_config_arn = resp['StudioLifecycleConfigArn']
-                    jupyter_setting = {'JupyterServerAppSettings': {
+                    jupyter_setting = {'JupyterLabAppSettings': {
                                                   'DefaultResourceSpec': {
                                                       'LifecycleConfigArn': lcc_config_arn,
-                                                      'InstanceType': 'system'
+                                                      'InstanceType': 'ml.t3.medium'
                                                    },
                                                   'LifecycleConfigArns': [ lcc_config_arn ]
                                           }
                                       }
-
-                    resp_d = sagemaker.update_domain(DomainId=domain_id,
-                                                     DefaultUserSettings=jupyter_setting)                    
+                    sagemaker.update_domain(DomainId=domain_id, DefaultUserSettings=jupyter_setting)
                     cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
                 except Exception as e:
                     print(e)
                     cfnresponse.send(event, context, cfnresponse.FAILED, {'Error': 'Unable to create Lifecycle Config'}, '')
               elif 'RequestType' in event and event['RequestType'] == 'Delete':
                 try:
-                    resp = sagemaker.delete_studio_lifecycle_config(StudioLifecycleConfigName='idp-git-bootstrap')
+                    sagemaker.delete_studio_lifecycle_config(StudioLifecycleConfigName='idp-git-bootstrap')
                     cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
                 except Exception as e:
                     print(e)
@@ -355,14 +280,13 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.9
       Timeout: 5
+      
   DefaultLcc:
     Type: Custom::ResourceForLcc
-    DependsOn:
-      - StudioDomain
+    DependsOn: StudioDomain
     Properties:
       ServiceToken: !GetAtt LccLambda.Arn
       DomainID: !Ref StudioDomain
-      UserProfileName: !Ref UserProfileName
 
   StudioDomain:
     Type: AWS::SageMaker::Domain
@@ -371,16 +295,14 @@ Resources:
       AuthMode: IAM
       DefaultUserSettings:
           ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
-          JupyterServerAppSettings:
-            DefaultResourceSpec:
-              InstanceType: system
-              SageMakerImageArn: !FindInMap
-                - JupyterMap
-                - !Ref 'AWS::Region'
-                - jupyterimage
+      DefaultSpaceSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
       DomainName: !Ref DomainName
       SubnetIds: !GetAtt DefaultVpcFinder.Subnets
       VpcId: !GetAtt DefaultVpcFinder.VpcId
+    
+  
+  
 
   UserProfile:
     Type: AWS::SageMaker::UserProfile
@@ -390,30 +312,25 @@ Resources:
       UserProfileName: !Ref UserProfileName
       UserSettings:
         ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+        JupyterLabAppSettings:
+          DefaultResourceSpec:
+            InstanceType: ml.t3.medium
 
-  JupyterApp:
-    Type: AWS::SageMaker::App
+  JupyterSpace:
+    Type: AWS::SageMaker::Space
     DependsOn: UserProfile
     Properties:
-      AppName: default
-      AppType: JupyterServer
       DomainId: !GetAtt StudioDomain.DomainId
-      UserProfileName: !Ref UserProfileName
-
-  DataScienceApp:
-    Type: AWS::SageMaker::App
-    DependsOn: UserProfile
-    Properties:
-      AppName: instance-event-engine-datascience-ml-t3-medium
-      AppType: KernelGateway
-      DomainId: !GetAtt StudioDomain.DomainId
-      ResourceSpec:
-        InstanceType:  ml.t3.medium
-        SageMakerImageArn: !FindInMap
-          - RegionMap
-          - !Ref 'AWS::Region'
-          - datascience
-      UserProfileName: !Ref UserProfileName
+      SpaceName: IDPDeployJupyterSpace
+      OwnershipSettings:
+        OwnerUserProfileName: !Ref UserProfileName
+      SpaceSharingSettings:
+        SharingType: Private
+      SpaceSettings:
+        AppType: JupyterLab
+        JupyterLabAppSettings:
+          DefaultResourceSpec:
+            InstanceType: ml.t3.medium
 
 ### S3 Bucket For A2I
   A2IBucket:
