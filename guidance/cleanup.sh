@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eo pipefail
 STACK_NAME=document-guidance-for-idp-on-aws
+export AWS_DEFAULT_REGION="us-east-1"  # deployment script runs in us-east-1
+
 ACCOUNT_NUMBER=$(aws sts get-caller-identity --query Account --output text)
 BUCKET_NAME="$STACK_NAME"-"$ACCOUNT_NUMBER"
 
