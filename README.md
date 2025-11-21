@@ -31,7 +31,7 @@ Key benefits of this IDP guidance include:
 
 By implementing this guidance, your organization can focus on high-value tasks and decision-making, while AI and automation handle the heavy lifting of document processing.
 
-<img src="IDP-Diagram-v3.png" width="1200" />
+<img src="guidance/IDP-Diagram-v3.png" width="1200" />
 
 ## Cost 
 
@@ -86,7 +86,7 @@ Deploy this guidance only in AWS regions that support Amazon Textract, Amazon Be
 2. Navigate to the folder that contains the solution
 
 ```bash
-cd gen-ai/guidance
+cd guidance
 ```
 3. Install the solution
 
@@ -94,7 +94,7 @@ cd gen-ai/guidance
 chmod +x deploy.sh
 ./deploy.sh
 ```
-<img src="screenshots/stack-completed.png" width="600" />
+<img src="guidance/screenshots/stack-completed.png" width="600" />
 
 ## Deployment Validation
 
@@ -106,7 +106,7 @@ Note the names of these s3 buckets created by CloudFormation: SourceS3Bucket and
 
 * If deployment is successful, you should see an active tables with the name starting with <document_> in DynamoDB. 
 
-<img src="screenshots/DynamoDB.png" width="800" />
+<img src="guidance/screenshots/DynamoDB.png" width="800" />
 
 * Run the following CLI command to validate the deployment: ```aws cloudformation describe YOUR_STACK_NAME```
 
@@ -127,32 +127,32 @@ aws s3 sync s3://[DestinationS3Bucket_NAME]/customer123 ./result_files/customer1
 ```
 Navigate to your S3 destination bucket. 
 
-<img src="screenshots/destination-bucket.png" width="800" />
+<img src="guidance/screenshots/destination-bucket.png" width="800" />
 
 You should see a folder named customer123 that will contain 2 folders. 
 First folder contains 3 objects related to Driver's License:
 1. Drivers License information that was extracted with Amazon Textract from the source bucket we uploaded named input_doc.txt
 
-<img src="screenshots/input_doc.png" width="400" />
-<img src="sample_files/customer123/drivers_license.png" width="400" />
+<img src="guidance/screenshots/input_doc.png" width="400" />
+<img src="guidance/sample_files/customer123/drivers_license.png" width="400" />
 
 2. classify_response.txt file contains the json output from our LLM
 
-<img src="screenshots/classify_response.png" width="600" />
+<img src="guidance/screenshots/classify_response.png" width="600" />
 
 3. Folder named DRIVERS_LICENSE contains 4 objects in JSON. Check out each JSON to familiarize
 
-<img src="screenshots/S3-DL-JSON.png" width="600" />
+<img src="guidance/screenshots/S3-DL-JSON.png" width="600" />
 
 
 
 Second folder contains 3 objects related to URLA:
 
-<img src="screenshots/S3-URLA.png" width="600" />
+<img src="guidance/screenshots/S3-URLA.png" width="600" />
 
 1. classify_response.txt contains the json output from our LLM
 
-<img src="screenshots/URLA-classify_response.png" width="400" />
+<img src="guidance/screenshots/URLA-classify_response.png" width="400" />
 
 2. input_doc.txt contains URLA information that was extracted with Amazon Textract from the source bucket we uploaded  
 3. Folder named URLA_1003 contains 4 objects in JSON. Check out each JSON 
@@ -172,11 +172,11 @@ The validation_results.json files contain the output from your document processi
 **DynamoDB tables**
 Now navigate to DynamoDB table called `document-processing-bedrock-prompt-flows-IDP_TEXTRACT_JOBS`containing Textract jobs
 
-<img src="screenshots/dynamoDB-populated-textract.png" width="800" />
+<img src="guidance/screenshots/dynamoDB-populated-textract.png" width="800" />
 
 `document-processing-bedrock-prompt-flows-IDP_CLASS_LIST` table contains a list of document classification classes
 
-<img src="screenshots/dynamoDB-classes-table.png" width="800" />
+<img src="guidance/screenshots/dynamoDB-classes-table.png" width="800" />
 
 
 
