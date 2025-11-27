@@ -18,7 +18,7 @@ Parameters:
     Type: String
 
   BedrockPromptModelId:
-    Description: Default model to use when creating rompts
+    Description: Default model to use when creating prompts
     Type: String
     Default: anthropic.claude-3-sonnet-20240229-v1:0
 
