@@ -14,7 +14,7 @@
     "@cloudscape-design/components": "^3.0.1112",
     "@cloudscape-design/global-styles": "1.0.44",
     "aws-amplify": "^6.16.2",
-    "axios": "1.13.2",
+    "axios": "1.15.0",
     "i18next": "^25.8.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "react": "18.3.1",
