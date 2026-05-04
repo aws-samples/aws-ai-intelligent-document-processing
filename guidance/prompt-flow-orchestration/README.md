@@ -33,6 +33,11 @@ By implementing this guidance, your organization can focus on high-value tasks a
 
 <img src="IDP-Diagram-v3.png" width="1200" />
 
+### Architecture diagram note
+
+This repository currently includes one prompt-flow architecture image (`IDP-Diagram-v3.png`) for this guidance.
+If you are comparing against the AWS Guidance website, you may see a tabbed "Diagram 1 / Diagram 2 / Diagram 3" viewer there. The website publishes these as a multi-page downloadable diagram asset, while this repository currently keeps the prompt-flow view as `IDP-Diagram-v3.png`.
+
 ## Cost 
 
 You are responsible for the cost of the AWS services used while running this Guidance. As of October 2024, the cost for running this Guidance with the default settings in the US East Region is approximately $89 per month for processing  1,000 pages. 
